@@ -10,7 +10,7 @@ from app.user.router import router as user_router
 app = FastAPI()
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
-app.mount("/build", StaticFiles(directory="build"), name='frontent')
+# app.mount("/build", StaticFiles(directory="build"), name='frontent')
 
 app.add_middleware(
     CORSMiddleware,

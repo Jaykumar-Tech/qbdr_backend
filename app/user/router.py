@@ -1,5 +1,4 @@
 import time, datetime
-import pandas as pd
 import asyncio
 from decouple import config
 
