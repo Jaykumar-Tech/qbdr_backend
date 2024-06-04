@@ -1,16 +1,10 @@
 import smtplib
 import zipfile
 
-from serpapi import GoogleSearch
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-from transformers import pipeline
 from decouple import config
 from sqlalchemy.orm import Session
-
-from app.googleSearchResult.repository import GoogleSearchResult
-from app.sentimentResult.repository import SentimentResult
-from app.searchid_list.repository import SearchIDListRepo
 
 from fastapi import Request
 
@@ -22,25 +16,6 @@ smtp_port = 587
 smtp_username = "register@reeact.io"
 smtp_password = "register@reeact.io"
 sender_email = "register@reeact.io"
-
-# sentiment_pipeline = pipeline("text-classification", model="cardiffnlp/twitter-roberta-base-sentiment-latest")
-sentiment_pipeline = pipeline("sentiment-analysis",
-                              model="cardiffnlp/twitter-xlm-roberta-base-sentiment",
-                              tokenizer="cardiffnlp/twitter-xlm-roberta-base-sentiment")
-def analysis_sentiment(text):
-    data = [text]
-    analysis = sentiment_pipeline(data)[0]
-    response = { "text": text, "label": analysis['label'].lower(), "score": analysis['score'] }
-    
-    return response
-
-def remove_http(string):
-    if string.startswith("https://"):
-        return string[8:]
-    elif string.startswith("http://"):
-        return string[7:]
-    else:
-        return string
 
 def get_user_id(request: Request):
     bearer_token = request.headers["Authorization"]
@@ -89,75 +64,4 @@ async def send_email(email: str, subject: str, email_body: str):
         return True
     except Exception as e:
         print("Error sending email:", str(e))
-        return False
-
-async def get_google_search_analysis(db: Session, user_id: int, search_keyword: str, start: int, num: int, stripe_id: str=None):
-    try:
-        if num:
-            search = GoogleSearch({
-                "q": search_keyword,
-                "location": "France",
-                "gl": "fr",
-                "serp_api_key": config('SerpAPI_Key_Google_Search'),
-                "start": start,
-                "num": 150
-            })
-            
-            search_result = search.get_dictionary()
-            
-            search_id = search_result.get("search_metadata")["id"]
-            
-            organic_results = search_result.get('organic_results')
-            count = 0
-            googleSearchResult_list = []
-            while(count < num):
-                try:
-                    organic_result = organic_results[count]
-                    count += 1
-                except:
-                    count += 1
-                    continue
-                sentiment_result = analysis_sentiment(f"{organic_result['title']} {organic_result['snippet'] if 'snippet' in organic_result else 'Unknown!'}")
-                googleSearchResult = {
-                    "search_id": search_id,
-                    "title": organic_result["title"],
-                    "link": organic_result["link"],
-                    "snippet": organic_result["snippet"] if "snippet" in organic_result else "Unknown!",
-                    "ranking": count,
-                    "keyword": organic_result["snippet"] if "snippet" in organic_result else "Unknown!",
-                    "label": sentiment_result["label"],
-                    "score": str(sentiment_result["score"])
-                }
-                googleSearchResult_list.append(googleSearchResult)
-                print(count, sentiment_result["label"])
-            
-            label_order = ["negative", "positive", "neutral"]
-
-            googleSearchResult_list = sorted(googleSearchResult_list, 
-                                            key=lambda k: label_order.index(k["label"]))
-            print("google search result sorted as order!")
-            for i, googleSearchResult in enumerate(googleSearchResult_list):
-                googleSearchResult["ranking"] = i
-                sentimentResult = {
-                    "keyword": googleSearchResult["keyword"],
-                    "label": googleSearchResult["label"],
-                    "score": googleSearchResult["score"]
-                }
-                createdSentimentResult = await SentimentResult.create(db=db, sentimentResult=sentimentResult)
-                createdGoogleSearchResult = await GoogleSearchResult.create(db=db, googleSearchResult=googleSearchResult)
-            print("google search result stored on db!")
-            searchid_list = {
-                "user_id": user_id,
-                "search_id": search_id,
-                "keyword_url": search_keyword,
-                "stripe_id": stripe_id
-            }
-            await SearchIDListRepo.create(db, searchid_list)
-            print("search id list stored on db!")
-            return {
-                "search_id": search_id,
-                "status": "Search successfully!!!"
-            }
-    except Exception as e:
-        print(e)
         return False
