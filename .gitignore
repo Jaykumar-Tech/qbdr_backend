@@ -8,7 +8,6 @@ Pipfile*
 *.pem
 *.key
 *.crt
-tools.py
 local_env
 live_env
 test_env
