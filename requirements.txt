@@ -1,5 +1,4 @@
 fastapi==0.111.0
-mysql-connector-python==8.4.0
-mysqlclient==2.2.4
-PyMySQL==1.1.1
 SQLAlchemy==1.4.0
+psycopg2==2.9.9
+alembic==1.13.1

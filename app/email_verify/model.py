@@ -1,5 +1,8 @@
-from sqlalchemy import Column, String, DateTime, Integer
-from database import Base
+from sqlalchemy import Column, String, DateTime, Integer, MetaData
+from sqlalchemy.ext.declarative import declarative_base
+
+metadata = MetaData()
+Base = declarative_base(metadata=metadata)
 
 class EmailVerify(Base):
     __tablename__ = "emailverify"

@@ -1,6 +1,8 @@
-from sqlalchemy import Column, Integer, String, Boolean
-from database import Base
+from sqlalchemy import Column, Integer, String, Boolean, MetaData
+from sqlalchemy.ext.declarative import declarative_base
 
+metadata = MetaData()
+Base = declarative_base(metadata=metadata)
 class User(Base):
     __tablename__ = "users"
     
