@@ -174,13 +174,13 @@ class UserRepo:
             print("Selected User:", user)
         except Exception as e:
             print("UserRepo Exception:", e)
-            return False
+            raise Exception(e)
         if not user:
-            return "L'utilisateur n'existe pas!"
+            raise Exception("User not found!")
         if not verify_password(password, user.password):
-            return "Le mot de passe n'est pas correct!"
+            raise Exception("Password is incorrect!")
         if user.activated == False:
-            return "L'utilisateur est suspendu."
+            raise Exception("User is not activated!")
         return user
     
     async def update_user_by_id(db: Session, user: schema.UserUpdate, id: int):

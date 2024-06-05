@@ -46,15 +46,15 @@ async def login(user_request: userSchema.UserLogin, db: Session = Depends(get_db
     """
         Login User with Email and Password
     """
-    db_user = await UserRepo.fetch_by_email_password(db, email=user_request.email, password=user_request.password)
-    if db_user:
+    try:
+        db_user = await UserRepo.fetch_by_email_password(db, email=user_request.email, password=user_request.password)
         jwt = signJWT(db_user.to_dict())
         return {
             "user": db_user,
             "jwt": jwt
         }
-    else:
-        raise HTTPException(status_code=400, detail=db_user)
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
 
 @router.get("/password_forgot/{email}", tags=["User"])
 async def password_forgot(email: str, db: Session=Depends(get_db)):
