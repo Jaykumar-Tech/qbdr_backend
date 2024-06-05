@@ -158,71 +158,25 @@ async def get_statistics(db: Session=Depends(get_db)):
     return statistics_data
 
 @router.post("/user/signup", tags=["User"])
-async def create_user(user_request: Request, db: Session = Depends(get_db)):
+async def create_user(user_request: userSchema.UserSignUp, db: Session = Depends(get_db)):
     """
         Create a User and store it in the database
     """
-    request_data = await user_request.json()
-    user_data = request_data['user_data']
     
-    email_verify_token = request_data["email_verify_token"] if "email_verify_token" in request_data else None
-    if email_verify_token == None:
-        raise HTTPException(status_code=400, detail="No Email Verify Token.")
-    email_verify_payload = decode_email_verify_JWT(email_verify_token)
-    if email_verify_payload == False:
-        raise HTTPException(status_code=400, detail="Invalid Token!")
-    if user_data["email"] != email_verify_payload["email"]:
-        raise HTTPException(status_code=400, detail="Token doesn't match.")
-    verify_result = await EmailVerifyRepo.check_verify_code(db, email_verify_payload["email"], email_verify_payload["verify_code"])
-    if verify_result != True:
-        raise HTTPException(status_code=400, detail=verify_result)
-    
-    db_user = await UserRepo.fetch_by_email(db, email=user_data['email'])
+    db_user = await UserRepo.fetch_by_email(db, email=user_request.email)
     if db_user:
-        raise HTTPException(status_code=400, detail="L'email existe déjà!")
-    db_user = await UserRepo.fetch_by_username(db, username=user_data['full_name'])
+        raise HTTPException(status_code=400, detail="Email already exists!")
+    db_user = await UserRepo.fetch_by_username(db, username=user_request.full_name)
     if db_user:
-        raise HTTPException(status_code=400, detail="Ce nom d'utilisateur existe déjà!")
-    user_data["email_verified"] = True
-    user_data["payment_verified"] = False
+        raise HTTPException(status_code=400, detail="Username already exists!")
     
-    created_user = await UserRepo.create(db=db, user=user_data)
+    created_user = await UserRepo.create(db=db, user=user_request)
     
     print("user created on db and stripe!")
     # await EmailVerifyRepo.delete(db, created_user.email)
     
-    jwt = signJWT(created_user.id, user_data['email'], created_user.role, created_user.subscription_at)
-    welcome_msg = f"""
-    <html>
-        <body>
-            <h2>Bonjour {created_user.full_name}</h2>
-            <p>Nous sommes ravis de vous accueillir en tant que nouvel utilisateur de la plateforme Reeact!</p>
-            <p>Nous sommes impatients de travailler avec vous et de vous offrir le meilleur service possible.</p>
-            <p>Si vous avez des questions ou des besoins spécifiques, n'hésitez pas à nous contacter.</p>
-            <p>Bonne analyse!<br/>L’équipe Reeact</p>
-            <img src="{config("SITE_URL")}/static/logoblue.png" alt="Reeact"></img>
-        </body>
-    </html>
-    """
-    print(welcome_msg)
-    await send_email(created_user.email, "Bienvenue sur Reeact!", welcome_msg)
-    print("welcome message sent!")
-    admin_maile_content = f"""
-    <html>
-        <body>
-            <h2>Bonjour!</h2>
-            <p>Un nouvel utilisateur s’est inscrit sur votre plateforme, voici les informations d’inscriptions :</p>
-            <p>{created_user.full_name}</p>
-            <p>{created_user.email}</p>
-            <p>Merci!<br/>L’équipe Reeact</p>
-            <img src="{config("SITE_URL")}/static/logoblue.png" alt="Reeact"></img>
-        </body>
-    </html>
-    """
-    print(admin_maile_content)
-    admin_list = await UserRepo.get_admins_data(db)
-    for admin in admin_list:
-        await send_email(admin.email, "Nouveau utilisateur", admin_maile_content)
+    jwt = signJWT(user_request)
+
     print("send emails to admins completed!")
     return {
         "user": created_user,
@@ -236,7 +190,7 @@ async def login(user_request: userSchema.UserLogin, db: Session = Depends(get_db
     """
     db_user = await UserRepo.fetch_by_email_password(db, email=user_request.email, password=user_request.password)
     if db_user:
-        jwt = signJWT(db_user.id, db_user.email, db_user.role, db_user.subscription_at)
+        jwt = signJWT(db_user)
         return {
             "user": db_user,
             "jwt": jwt
