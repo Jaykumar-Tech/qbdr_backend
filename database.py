@@ -2,10 +2,9 @@ from sqlalchemy import create_engine, MetaData
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-# SQLALCHEMY_DATABASE_URL = "mysql+mysqlconnector://honey:honey@127.0.0.1:3306/reeact_test"
-SQLALCHEMY_DATABASE_URL = "mysql+mysqlconnector://root:password@127.0.0.1:3306/qbdr"
-# SQLALCHEMY_DATABASE_URL = "mysql+mysqlconnector://root:password@127.0.0.1:3306/reeact_test"
-# SQLALCHEMY_DATABASE_URL = "mysql+mysqlconnector://root:@127.0.0.1:3306/reeact"
+from decouple import config
+
+SQLALCHEMY_DATABASE_URL = config("POSTGRES_URL")
 
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL,
