@@ -1,4 +1,4 @@
 fastapi==0.111.0
 SQLAlchemy==1.4.0
-psycopg2==2.9.9
+psycopg2-binary
 alembic==1.13.1
