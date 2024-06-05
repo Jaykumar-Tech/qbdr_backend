@@ -12,3 +12,5 @@ Pipfile*
 local_env
 live_env
 test_env
+
+maintest.py

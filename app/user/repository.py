@@ -14,49 +14,18 @@ def get_password_hash(password):
 
 class UserRepo:
     
-    async def create(db: Session, user: dict):
+    async def create(db: Session, user: schema.UserCreate):
         try:
-            hashed_password = get_password_hash(user['password'])
-            created_at = datetime.datetime.now()
-            created_year = str(created_at.year)
-            created_month = str(created_at.month)
-            created_day = str(created_at.day)
-            user["google_id"] = user["google_id"] if "google_id" in user else ""
-            user["payment_verified"] = user["payment_verified"] if "payment_verified" in user else False
-            user["email_verified"] = True #user["email_verified"] if "email_verified" in user else False
-            user["avatar_url"] = user["avatar_url"] if "avatar_url" in user else "static/avatar.png"
-            user["social_reason"] = user["social_reason"] if "social_reason" in user else None
-            user["number_siret"] = user["number_siret"] if "number_siret" in user else None
-            user["vat_number"] = user["vat_number"] if "vat_number" in user else None
-            user["activity"] = user["activity"] if "activity" in user else None
-            user["site_internet"] = user["site_internet"] if "site_internet" in user else None
-            user["subscription_at"] = user["subscription_at"] if "subscription_at" in user else None
-            user["stripe_id"] = user["stripe_id"] if "stripe_id" in user else None
-            db_user = model.User(email=user['email'],
-                                full_name=user['full_name'],
-                                first_name=user['first_name'],
-                                last_name=user['last_name'],
+            hashed_password = get_password_hash(user.password)
+            db_user = model.User(email=user.email,
+                                full_name=user.full_name,
+                                first_name=user.first_name,
+                                last_name=user.last_name,
                                 password=hashed_password,
-                                social_reason=user["social_reason"],
-                                activity=user["activity"],
-                                number_siret=user["number_siret"],
-                                vat_number=user["vat_number"],
-                                address=user["address"],
-                                postal_code=user["postal_code"],
-                                province=user["province"],
-                                pays=user["pays"],
-                                phone=user["phone"],
-                                site_internet=user["site_internet"],
-                                google_id=user["google_id"],
-                                payment_verified=user["email_verified"],
-                                email_verified=user["payment_verified"],
-                                subscription_at=user["subscription_at"],
-                                created_at=created_year+"-"+created_month+"-"+created_day, 
-                                subscription_expired=True, 
-                                role=user["role"],
-                                avatar_url=user["avatar_url"],
-                                user_type=user["user_type"],
-                                stripe_id=user["stripe_id"],
+                                google_id=user.google_id,
+                                email_verified=user.email_verified,
+                                role=user.role,
+                                avatar_url=user.avatar_url,
                                 forgot_password_token="",
                                 activated=True)
             db.add(db_user)
@@ -66,7 +35,7 @@ class UserRepo:
         except Exception as e:
             print("UserRepo Exception:", e)
             db.rollback()
-            return False
+            raise Exception(e)
     
     async def delete_user(db: Session, user_id: int):
         try:

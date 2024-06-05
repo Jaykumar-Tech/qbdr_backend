@@ -24,8 +24,6 @@ class UserCreate(UserBase):
 class UserUpdate(UserBase):
     pass
 
-class UserSignUp(UserBase):
-    pass
 class UserLogin(BaseModel):
     email: str
     password: str
