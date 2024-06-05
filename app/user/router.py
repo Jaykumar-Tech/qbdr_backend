@@ -30,16 +30,13 @@ async def create_user(user_request: userSchema.UserCreate, db: Session = Depends
     
     try:
         created_user = await UserRepo.create(db=db, user=user_request)
-        print("user created successfully!")
+        jwt = signJWT(created_user.to_dict())
+        return {
+            "user": created_user,
+            "jwt": jwt,
+        }
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
-    
-    jwt = signJWT(created_user.to_dict())
-
-    return {
-        "user": created_user,
-        "jwt": jwt,
-    }
 
 @router.post("/user/login", tags=["User"])
 async def login(user_request: userSchema.UserLogin, db: Session = Depends(get_db)):
