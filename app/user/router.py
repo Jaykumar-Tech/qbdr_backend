@@ -92,7 +92,7 @@ async def check_password_forgot_token(request: Request, db: Session=Depends(get_
         raise HTTPException(status_code=403, detail="jeton invalide")
     return True
 
-@router.post("/change_password", tags=["user"])
+@router.post("/change_password", tags=["User"])
 async def change_password(request: Request, db: Session=Depends(get_db)):
     req_data = await request.json()
     token = req_data["token"]

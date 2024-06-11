@@ -5,6 +5,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.email_verify.router import router as email_verify_router
 from app.user.router import router as user_router
+from app.glassbiller.router import router as glassbiller_router
 
 # app = FastAPI(docs_url=None, redoc_url=None)
 app = FastAPI()
@@ -22,6 +23,7 @@ app.add_middleware(
 
 app.include_router(email_verify_router, prefix="/api")
 app.include_router(user_router, prefix="/api")
+app.include_router(glassbiller_router, prefix="/api/grassbiller")
 
 # route handlers
 @app.exception_handler(404)
