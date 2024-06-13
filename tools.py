@@ -41,7 +41,16 @@ def check_file_type(filename):
         return True
     else:
         return False
-    
+
+async def get_nested_value(d, key):
+        keys = key.split(".")
+        value = d
+        for k in keys:
+            value = value.get(k)
+            if value is None:
+                return None
+        return value
+
 def zip_files(file_paths, zip_name):
     with zipfile.ZipFile(zip_name, 'w') as zipf:
         for file in file_paths:

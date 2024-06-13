@@ -14,9 +14,9 @@ class FiltersModel(BaseModel):
     referral_number: Optional[str] = ""
     customer_first_name: Optional[str] = ""
     parts: Optional[str] = ""
-    invoice_date_option: Optional[str] = "dateRange"
-    range_invoice_date_1: Optional[str]
-    range_invoice_date_2: Optional[str]
+    invoice_date_option: Optional[str] = ""
+    range_invoice_date_1: Optional[str] = ""
+    range_invoice_date_2: Optional[str] = ""
     total_materials_option: Optional[str] = ""
     total_materials_1: Optional[str] = ""
     total_materials_2: Optional[str] = ""
@@ -55,10 +55,10 @@ class SearchPayloadModel(GlassbillerBase):
     sortDesc: Optional[bool] = False
     exportCSV: Optional[str] = "no"
     filters: FiltersModel
-    csvColumns: Optional[str] = ""
-    csvColumnNames: Optional[str] = ""
+    csvColumns: Optional[str] = "row_number,job_id,status,referral_number,vehicle.vin,consumer.name.last,consumer.name.first,commercialaccount_name,parts,invoice_date,total_materials,total_labor,total_subtotal,total_taxes,total_after_taxes,deductible,total_balance_after_payments,vehicle.year,vehicle.make,vehicle.model,vehicle.sub_model,vehicle.style,insurance_fleet_name,bill_to.consumer_edi.trading_partner"
+    csvColumnNames: Optional[str] = "Row #,Job #,Job Type,Referral #,Vin #,Last Name,First Name,Commercial Account Name,Parts,Invoice Date,Materials,Labor,Sub-Total,Sales Tax,Total Invoice,Deductible,Balance Due,Year,Make,Model,Sub-Model,Style,Bill To,Trading Partner"
     csvRow_export: Optional[str] = ""
-    csvAllRowsSelected: Optional[str] = ""
+    csvAllRowsSelected: Optional[str] = "yes"
 
 class DateRangeModel(GlassbillerBase):
     start_date: str

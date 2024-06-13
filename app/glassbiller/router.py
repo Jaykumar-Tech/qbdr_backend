@@ -1,4 +1,5 @@
 import time
+import json
 import requests
 from decouple import config
 from urllib.parse import urlparse, parse_qs
@@ -12,12 +13,13 @@ from tools import get_user_id, send_email
 from app.auth.auth_bearer import JWTBearer
 from app.auth.auth_handler import signJWT, generateJWT, decode_token
 
-from .schema import FiltersModel, SearchPayloadModel, DateRangeModel
+from . import schema as gbSchema
+from .repository import GlassbillerRepo
 
 router = APIRouter()
 
 @router.get('/get_api_token', dependencies=[Depends(JWTBearer())], tags=["Glassbiller"])
-def get_api_token():
+async def get_api_token():
     login_detail = requests.post(url="https://auth.glassbiller.com/api/tenant/login",
                                 data={
                                     "u": config("GLASSBILLER_EMAIL"),
@@ -56,7 +58,7 @@ def get_api_token():
     }
     
 @router.post("/search_payments", dependencies=[Depends(JWTBearer())], tags=["Glassbiller"])
-def search_payments(date_range: DateRangeModel, request: Request, db: Session=Depends(get_db)):
+async def search_payments(date_range: gbSchema.DateRangeModel, request: Request, db: Session=Depends(get_db)):
     request_headers = {
         "Authorization": f"Bearer {date_range.access_token}",
         "Content-Type": "application/json;charset=UTF-8",
@@ -80,6 +82,7 @@ def search_payments(date_range: DateRangeModel, request: Request, db: Session=De
             if page_num > pagination_data.get('total') // pagination_data.get('perPage') + 1:
                 break
     else:
+        print(response.reason)
         raise HTTPException(status_code=response.status_code, detail=response.reason)
 
     for payment in payment_data:
@@ -92,3 +95,35 @@ def search_payments(date_range: DateRangeModel, request: Request, db: Session=De
             payment.update(payment_details)
     
     return payment_data
+
+@router.post("/get_job_detail", dependencies=[Depends(JWTBearer())], tags=["Glassbiller"])
+async def get_job_detail(search_param: gbSchema.SearchPayloadModel, request: Request, db: Session=Depends(get_db)):
+    request_headers = {
+        "Authorization": f"Bearer {search_param.access_token}",
+        "Content-Type": "application/json;charset=UTF-8",
+    }
+    
+    url = "https://uat.glassbiller.com/unum/job-details/jobslist/search"
+    
+    payload = search_param.model_dump()
+    response = requests.post(url, data=json.dumps(payload), headers=request_headers)
+    if response.status_code == 200:
+        result = []
+        res_data = response.json().get("rows", [])
+        for job in res_data:
+            csv_job = await GlassbillerRepo.parse_job_data(db, job)
+            db_job = await GlassbillerRepo.create_job(db, csv_job)
+            if db_job:
+                result.append(csv_job)
+            if csv_job['Deductible']:
+                deduct_job = {}
+                for key in ["Job #", "Last Name", "First Name", "Invoice Date", "Deductible", "Proper Name"]:
+                    deduct_job[key] = csv_job[key]
+                deduct_job["Insurance Discounts:Deductible"] = -csv_job["Insurance Discounts:Deductible"]
+                deductible_job = await GlassbillerRepo.create_job(db, deduct_job)
+                if deduct_job:
+                    result.append(deductible_job)
+        return result
+    else:
+        print(response.reason)
+        raise HTTPException(status_code=response.status_code, detail=response.reason)
