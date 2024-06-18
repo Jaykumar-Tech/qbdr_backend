@@ -21,7 +21,7 @@ def get_user_id(request: Request):
     bearer_token = request.headers["Authorization"]
     jwt_token = bearer_token[7:]
     payload = decodeJWT(jwt_token)
-    user_id = payload.get("user_id")
+    user_id = payload["user"].get("id")
     return user_id
 
 def check_user_role(request: Request):

@@ -62,6 +62,21 @@ class GlassbillerRepo:
             db.rollback()
             return None
     
+    async def get_all_payment_accounts(db: Session):
+        try:
+            return db.query(model.QBOPaymentAccount).all()
+        except Exception as e:
+            print(f"Error occures when get all payment account: {e}")
+            db.rollback()
+            return None
+    
+    async def get_all_insurance_companies(db: Session):
+        try:
+            return db.query(model.InsuranceCompany).all()
+        except Exception as e:
+            print(f"Error occures when get all insurance companies: {e}")
+            db.rollback()
+    
     async def parse_job_data(db: Session, job_data: dict) -> dict:
         csvColumns = "row_number,job_id,status,referral_number,vehicle.vin,consumer.name.last,consumer.name.first,commercialaccount_name,parts,invoice_date,total_materials,total_labor,total_subtotal,total_taxes,total_after_taxes,deductible,total_balance_after_payments,vehicle.year,vehicle.make,vehicle.model,vehicle.sub_model,vehicle.style,insurance_fleet_name,bill_to.consumer_edi.trading_partner"
         csvColumnNames = "Row #,Job #,Job Type,Referral #,Vin #,Last Name,First Name,Commercial Account Name,Parts,Invoice Date,Materials,Labor,Sub-Total,Sales Tax,Total Invoice,Deductible,Balance Due,Year,Make,Model,Sub-Model,Style,Bill To,Trading Partner"
