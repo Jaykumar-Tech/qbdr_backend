@@ -12,7 +12,6 @@ from app.qbo.router import router as qbo_router
 app = FastAPI()
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
-app.mount("/build", StaticFiles(directory="build"), name='frontent')
 
 app.add_middleware(
     CORSMiddleware,
@@ -30,4 +29,4 @@ app.include_router(qbo_router, prefix="/api/qbo")
 # route handlers
 @app.exception_handler(404)
 async def not_found_404(request, exc):
-    return FileResponse("build/index.html")
+    return FileResponse("static/index.html")

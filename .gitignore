@@ -2,6 +2,7 @@
 venv/
 .venv/
 env/
+static/
 **/__pycache__
 .vscode
 .env
