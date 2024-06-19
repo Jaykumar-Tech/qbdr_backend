@@ -62,6 +62,40 @@ class GlassbillerRepo:
             db.rollback()
             return None
     
+    async def update_job(db: Session, id: str, row_data: dict):
+        try:
+            now = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S.%f")
+            job = db.query(model.GlassbillerJob).filter(model.GlassbillerJob.id == id).first()
+            for key, value in row_data.items():
+                setattr(job, key, value)
+            setattr(job, "updated_at", now)
+            db.commit()
+            db.refresh(job)
+            return job
+        except Exception as e:
+            print(f"Error occures when update job: {e}")
+            db.rollback()
+            return None
+    
+    async def get_job_by_jobid(db: Session, job_id: int, is_deductible: bool=False):
+        try:
+            deductible = None
+            not_deductible = None
+            if is_deductible:
+                deductible = db.query(model.GlassbillerJob).filter(model.GlassbillerJob.job_id == job_id).all()[-1]
+            else:
+                not_deductible = db.query(model.GlassbillerJob).filter(model.GlassbillerJob.job_id == job_id).first()
+            
+            if deductible == not_deductible and is_deductible:
+                return None
+            else:
+                return deductible if is_deductible else not_deductible
+           
+        except Exception as e:
+            print(f"Error occures when get job by jobid: {e}")
+            db.rollback()
+            return None
+    
     async def get_all_payment_accounts(db: Session):
         try:
             return db.query(model.QBOPaymentAccount).all()
@@ -78,8 +112,8 @@ class GlassbillerRepo:
             db.rollback()
     
     async def parse_job_data(db: Session, job_data: dict) -> dict:
-        csvColumns = "row_number,job_id,status,referral_number,vehicle.vin,consumer.name.last,consumer.name.first,commercialaccount_name,parts,invoice_date,total_materials,total_labor,total_subtotal,total_taxes,total_after_taxes,deductible,total_balance_after_payments,vehicle.year,vehicle.make,vehicle.model,vehicle.sub_model,vehicle.style,insurance_fleet_name,bill_to.consumer_edi.trading_partner"
-        csvColumnNames = "Row #,Job #,Job Type,Referral #,Vin #,Last Name,First Name,Commercial Account Name,Parts,Invoice Date,Materials,Labor,Sub-Total,Sales Tax,Total Invoice,Deductible,Balance Due,Year,Make,Model,Sub-Model,Style,Bill To,Trading Partner"
+        csvColumns = "job_id,status,referral_number,vehicle.vin,consumer.name.last,consumer.name.first,commercialaccount_name,parts,invoice_date,total_materials,total_labor,total_subtotal,total_taxes,total_after_taxes,deductible,total_balance_after_payments,vehicle.year,vehicle.make,vehicle.model,vehicle.sub_model,vehicle.style,insurance_fleet_name,bill_to.consumer_edi.trading_partner"
+        csvColumnNames = "Job #,Job Type,Referral #,Vin #,Last Name,First Name,Commercial Account Name,Parts,Invoice Date,Materials,Labor,Sub-Total,Sales Tax,Total Invoice,Deductible,Balance Due,Year,Make,Model,Sub-Model,Style,Bill To,Trading Partner"
         
         row_data = {}
         for col_name, key in zip(csvColumnNames.split(","), csvColumns.split(",")):

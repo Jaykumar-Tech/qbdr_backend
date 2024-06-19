@@ -112,17 +112,28 @@ async def get_job_detail(search_param: gbSchema.SearchPayloadModel, request: Req
         res_data = response.json().get("rows", [])
         for job in res_data:
             csv_job = await GlassbillerRepo.parse_job_data(db, job)
-            db_job = await GlassbillerRepo.create_job(db, csv_job)
+            db_job = await GlassbillerRepo.get_job_by_jobid(db, csv_job["Job #"], is_deductible=False)
             if db_job:
+                await GlassbillerRepo.update_job(db, db_job.id, csv_job)
                 result.append(csv_job)
-            if csv_job['Deductible']:
+            else:
+                new_job = await GlassbillerRepo.create_job(db, csv_job)
+                if new_job:
+                    result.append(csv_job)
+            if csv_job['Insurance Discounts:Deductible']:
                 deduct_job = {}
                 for key in ["Job #", "Last Name", "First Name", "Invoice Date", "Deductible", "Proper Name"]:
                     deduct_job[key] = csv_job[key]
                 deduct_job["Insurance Discounts:Deductible"] = -csv_job["Insurance Discounts:Deductible"]
-                deductible_job = await GlassbillerRepo.create_job(db, deduct_job)
-                if deduct_job:
-                    result.append(deductible_job)
+                
+                deductible_job = await GlassbillerRepo.get_job_by_jobid(db, deduct_job["Job #"], is_deductible=True)
+                if deductible_job:
+                    await GlassbillerRepo.update_job(db, deductible_job.id, deduct_job)
+                    result.append(deduct_job)
+                else:
+                    new_job = await GlassbillerRepo.create_job(db, deduct_job)
+                    if new_job:
+                        result.append(deduct_job)
         return result
     else:
         print(response.reason)
