@@ -37,6 +37,23 @@ async def save_qbo_settings(qbo_settings: qbSchema.QboSetting, request: Request,
     
     return settings
 
+@router.get('/get_authuri', dependencies=[Depends(JWTBearer())], tags=["QBO"])
+async def get_authuri(request: Request, db: Session = Depends(get_db)):
+    user_id = get_user_id(request)
+    qbo_settings = await QboRepo.get_setting_by_user_id(user_id, db)
+    if qbo_settings == None:
+        raise HTTPException(status_code=403, detail="QBO Settings Not Found!")
+    qb_controller = QBOController(
+        client_id=qbo_settings.client_id,
+        client_secret=qbo_settings.client_secret,
+        access_token=qbo_settings.access_token,
+        refresh_token=qbo_settings.refresh_token,
+        realm_id=qbo_settings.ream_id,
+        environment="sandbox" if qbo_settings.is_sandbox else "production"
+    )
+    auth_uri = await qb_controller.get_auth_uri()
+    return auth_uri
+
 @router.post('/create_sales_receipt', dependencies=[Depends(JWTBearer())], tags=["QBO"])
 async def create_sales_receipt(receipt_data: qbSchema.QboCreateSalesReceipt,request: Request, db: Session = Depends(get_db)):
     try:

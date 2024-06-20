@@ -44,7 +44,7 @@ class QBOController:
 
         self.access_token = access_token
         self.refresh_token = refresh_token
-        self.state_token = state_token
+        self.state_token = state_token if state_token else "GlasscleanerOAuth"
         self.id_token = id_token
         self.realm_id = realm_id
         self.auth_code = auth_code
@@ -64,6 +64,19 @@ class QBOController:
             refresh_token=self.auth_client.refresh_token,
             company_id=self.realm_id,
             sandbox=True if self.environment == 'sandbox' else False
+        )
+    
+    async def get_authUri(self) -> str:
+        """
+        Returns the authorization URI for the QuickBooks Online API.
+
+        Returns:
+            str: The authorization URI.
+        """
+
+        return self.auth_client.get_authorization_url(
+            scopes=[Scopes.ACCOUNTING],
+            state_token=self.state_token
         )
 
     async def create_sales_receipt(self, payment_group_data, billing_data, insurance_companies, payment_method_to_account) -> SalesReceipt:
