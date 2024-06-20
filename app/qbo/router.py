@@ -49,7 +49,8 @@ async def get_authuri(request: Request, db: Session = Depends(get_db)):
         access_token=qbo_settings.access_token,
         refresh_token=qbo_settings.refresh_token,
         realm_id=qbo_settings.ream_id,
-        environment="sandbox" if qbo_settings.is_sandbox else "production"
+        environment="sandbox" if qbo_settings.is_sandbox else "production",
+        redirect_uri="https://glasscleaner.oceanautoglass.net/rediect_url" if qbo_settings.is_sandbox else "http://localhost:3000/rediect_url"
     )
     await qb_controller.init()
     auth_uri = await qb_controller.get_authUri()
