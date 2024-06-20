@@ -52,7 +52,7 @@ async def get_authuri(request: Request, db: Session = Depends(get_db)):
         environment="sandbox" if qbo_settings.is_sandbox else "production"
     )
     await qb_controller.init()
-    auth_uri = await qb_controller.get_auth_uri()
+    auth_uri = await qb_controller.get_authUri()
     return auth_uri
 
 @router.post('/create_sales_receipt', dependencies=[Depends(JWTBearer())], tags=["QBO"])
