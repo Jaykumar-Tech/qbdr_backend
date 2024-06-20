@@ -43,7 +43,7 @@ async def get_authuri(request: Request, db: Session = Depends(get_db)):
     qbo_settings = await QboRepo.get_setting_by_user_id(user_id, db)
     if qbo_settings == None:
         raise HTTPException(status_code=403, detail="QBO Settings Not Found!")
-    qb_controller = QBOController(
+    qb_controller = await QBOController(
         client_id=qbo_settings.client_id,
         client_secret=qbo_settings.client_secret,
         access_token=qbo_settings.access_token,
@@ -68,7 +68,7 @@ async def create_sales_receipt(receipt_data: qbSchema.QboCreateSalesReceipt,requ
         insurance_companies = { insurance_company.trading_partner: insurance_company.company_name for insurance_company in insurance_companies }
         payment_accounts = { payment_account.payment_method: payment_account.deposit_account for payment_account in payment_accounts }
         
-        qb_controller = QBOController(
+        qb_controller = await QBOController(
             client_id=qbo_settings.client_id,
             client_secret=qbo_settings.client_secret,
             access_token=qbo_settings.access_token,
@@ -102,7 +102,7 @@ async def create_payment(payment_data: qbSchema.QboCreatePayment,request: Reques
         insurance_companies = { insurance_company.trading_partner: insurance_company.company_name for insurance_company in insurance_companies }
         payment_accounts = { payment_account.payment_method: payment_account.deposit_account for payment_account in payment_accounts }
         
-        qb_controller = QBOController(
+        qb_controller = await QBOController(
             client_id=qbo_settings.client_id,
             client_secret=qbo_settings.client_secret,
             access_token=qbo_settings.access_token,
