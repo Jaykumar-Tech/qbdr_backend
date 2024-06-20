@@ -81,10 +81,11 @@ class GlassbillerRepo:
         try:
             deductible = None
             not_deductible = None
-            if is_deductible:
-                deductible = db.query(model.GlassbillerJob).filter(model.GlassbillerJob.job_id == job_id).all()[-1]
-            else:
-                not_deductible = db.query(model.GlassbillerJob).filter(model.GlassbillerJob.job_id == job_id).first()
+            
+            deductible = db.query(model.GlassbillerJob).filter(model.GlassbillerJob.job_id == job_id).all()
+            if deductible:
+                deductible = deductible[-1]
+            not_deductible = db.query(model.GlassbillerJob).filter(model.GlassbillerJob.job_id == job_id).first()
             
             if deductible == not_deductible and is_deductible:
                 return None
@@ -124,7 +125,6 @@ class GlassbillerRepo:
         ).filter(
             model.GlassbillerInsuranceRate.company == row_data["Bill To"]
         ).first()
-        print(insurance_rate)
         
         data_keys = db.query(
             model.GlassbillerDataKey
