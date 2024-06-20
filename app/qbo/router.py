@@ -43,7 +43,7 @@ async def get_authuri(request: Request, db: Session = Depends(get_db)):
     qbo_settings = await QboRepo.get_setting_by_user_id(user_id, db)
     if qbo_settings == None:
         raise HTTPException(status_code=403, detail="QBO Settings Not Found!")
-    qb_controller = await QBOController(
+    qb_controller = QBOController(
         client_id=qbo_settings.client_id,
         client_secret=qbo_settings.client_secret,
         access_token=qbo_settings.access_token,
@@ -51,6 +51,7 @@ async def get_authuri(request: Request, db: Session = Depends(get_db)):
         realm_id=qbo_settings.ream_id,
         environment="sandbox" if qbo_settings.is_sandbox else "production"
     )
+    await qb_controller.init()
     auth_uri = await qb_controller.get_auth_uri()
     return auth_uri
 
@@ -68,7 +69,7 @@ async def create_sales_receipt(receipt_data: qbSchema.QboCreateSalesReceipt,requ
         insurance_companies = { insurance_company.trading_partner: insurance_company.company_name for insurance_company in insurance_companies }
         payment_accounts = { payment_account.payment_method: payment_account.deposit_account for payment_account in payment_accounts }
         
-        qb_controller = await QBOController(
+        qb_controller = QBOController(
             client_id=qbo_settings.client_id,
             client_secret=qbo_settings.client_secret,
             access_token=qbo_settings.access_token,
@@ -76,7 +77,7 @@ async def create_sales_receipt(receipt_data: qbSchema.QboCreateSalesReceipt,requ
             realm_id=qbo_settings.ream_id,
             environment="sandbox" if qbo_settings.is_sandbox else "production"
         )
-        
+        await qb_controller.init()
         receipt_data.billing_data.job_id = f"#{receipt_data.billing_data.job_id}"
         receipt_data.billing_data.refferal = f"#{receipt_data.billing_data.refferal}"
         receipt_data.billing_data.vin = f"#{receipt_data.billing_data.vin}"
@@ -102,7 +103,7 @@ async def create_payment(payment_data: qbSchema.QboCreatePayment,request: Reques
         insurance_companies = { insurance_company.trading_partner: insurance_company.company_name for insurance_company in insurance_companies }
         payment_accounts = { payment_account.payment_method: payment_account.deposit_account for payment_account in payment_accounts }
         
-        qb_controller = await QBOController(
+        qb_controller = QBOController(
             client_id=qbo_settings.client_id,
             client_secret=qbo_settings.client_secret,
             access_token=qbo_settings.access_token,
@@ -110,7 +111,7 @@ async def create_payment(payment_data: qbSchema.QboCreatePayment,request: Reques
             realm_id=qbo_settings.ream_id,
             environment="sandbox" if qbo_settings.is_sandbox else "production"
         )
-        
+        await qb_controller.init()
         for billing_data in payment_data.billing_data_list:
             billing_data.job_id = f"#{billing_data.job_id}"
             billing_data.refferal = f"#{billing_data.refferal}"

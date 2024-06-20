@@ -25,7 +25,7 @@ from quickbooks.objects import Customer, \
                                 PaymentLine
 
 class QBOController:
-    async def __init__(self,
+    def __init__(self,
                  client_id=None,
                  client_secret=None,
                  redirect_uri=None,
@@ -49,6 +49,7 @@ class QBOController:
         self.realm_id = realm_id
         self.auth_code = auth_code
         
+    async def init(self):
         self.auth_client = AuthClient(
             client_id=self.client_id,
             client_secret=self.client_secret,
