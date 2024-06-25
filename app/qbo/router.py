@@ -121,16 +121,15 @@ async def create_sales_receipt(receipt_data: qbSchema.QboCreateSalesReceipt,requ
         new_sales_receipt = await qb_controller.create_sales_receipt(receipt_data.payment_group.to_dict(), receipt_data.billing_data.to_dict(), insurance_companies, payment_accounts)
         return new_sales_receipt
     except Exception as e:
-        if "Token expired" in str(e):
-            updated_settings = {
-                "id":qbo_settings.id,
-                "client_id":qb_controller.auth_client.client_id,
-                "client_secret":qb_controller.auth_client.client_secret,
-                "access_token":qb_controller.auth_client.access_token,
-                "refresh_token":qb_controller.auth_client.refresh_token,
-                "realm_id":qb_controller.realm_id,
-            }
-            await QboRepo.update_setting(updated_settings, db)
+        updated_settings = {
+            "id":qbo_settings.id,
+            "client_id":qb_controller.auth_client.client_id,
+            "client_secret":qb_controller.auth_client.client_secret,
+            "access_token":qb_controller.auth_client.access_token,
+            "refresh_token":qb_controller.auth_client.refresh_token,
+            "realm_id":qb_controller.realm_id,
+        }
+        await QboRepo.update_setting(updated_settings, db)
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.post('/create_payment', dependencies=[Depends(JWTBearer())], tags=["QBO"])
@@ -167,6 +166,15 @@ async def create_payment(payment_data: qbSchema.QboCreatePayment,request: Reques
         new_payment = await qb_controller.create_payment(payment_data["payment_group"], payment_data["billing_data_list"], insurance_companies, payment_accounts)
         return new_payment
     except Exception as e:
+        updated_settings = {
+            "id":qbo_settings.id,
+            "client_id":qb_controller.auth_client.client_id,
+            "client_secret":qb_controller.auth_client.client_secret,
+            "access_token":qb_controller.auth_client.access_token,
+            "refresh_token":qb_controller.auth_client.refresh_token,
+            "realm_id":qb_controller.realm_id,
+        }
+        await QboRepo.update_setting(updated_settings, db)
         raise HTTPException(status_code=400, detail=str(e))
 
 @router.post('/export_to_qbo', dependencies=[Depends(JWTBearer())], tags=["QBO"])
@@ -287,5 +295,14 @@ async def export_to_qbo(payment_data: qbSchema.QboPaymentGroup, request: Request
             new_payment = await qb_controller.create_payment(payment_data.model_dump(), billing_data_list, insurance_companies, payment_accounts)                
         
     except Exception as e:
+        updated_settings = {
+            "id":qbo_settings.id,
+            "client_id":qb_controller.auth_client.client_id,
+            "client_secret":qb_controller.auth_client.client_secret,
+            "access_token":qb_controller.auth_client.access_token,
+            "refresh_token":qb_controller.auth_client.refresh_token,
+            "realm_id":qb_controller.realm_id,
+        }
+        await QboRepo.update_setting(updated_settings, db)
         raise HTTPException(status_code=400, detail=str(e))
         

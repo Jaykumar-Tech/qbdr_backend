@@ -44,7 +44,7 @@ class QboPaymentGroup(BaseModel):
     date: str
     x_action_type: Optional[str] = None
     x_action_number: Optional[str] = None
-    payment_account_id: Optional[str] = None
+    payment_account_id: Optional[int] = None
     created: int
     qbo_account_id: Optional[str] = None
     qbo_account_name: Optional[str] = None
