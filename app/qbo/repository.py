@@ -190,8 +190,8 @@ class QBOController:
             logging.info(f"QBO Controller: New Sales Receipt Created - {billing_data['Job #'][1:]}")
             return new_sales_receipt
         except AuthorizationException as authexception:
-            if "Token expired" in authexception.detail:
-                self.auth_client.refresh(self.refresh_token)
+            self.auth_client.refresh(self.refresh_token)
+            print(f"QBO Controller: Token Expired, Refreshing Token")
             print(f"QBO Controller: Faild Creating Sale receipt: {authexception}")
             logging.exception(authexception)
             raise authexception
@@ -293,9 +293,8 @@ class QBOController:
             logging.info(f"QBO Controller: New Invoice Created - {billing_data['Job #'][1:]}")
             return new_invoice
         except AuthorizationException as authexception:
-            if "Token expired" in authexception.detail:
-                self.auth_client.refresh(self.refresh_token)
-                print(f"QBO Controller: Token Expired, Refreshing Token")
+            self.auth_client.refresh(self.refresh_token)
+            print(f"QBO Controller: Token Expired, Refreshing Token")
             print(f"QBO Controller: Faild Creating Invoice: {authexception}")
             logging.exception(authexception)
             raise authexception
@@ -352,9 +351,8 @@ class QBOController:
             logging.info(f"QBO Controller: New Payment Created- {payment_group_data['payments'][0]['job_id']}")
             return new_payment
         except AuthorizationException as authexception:
-            if "Token expired" in authexception.detail:
-                self.auth_client.refresh(self.refresh_token)
-                print(f"QBO Controller: Token Expired, Refreshing Token")
+            self.auth_client.refresh(self.refresh_token)
+            print(f"QBO Controller: Token Expired, Refreshing Token")
             print(f"QBO Controller: Faild Creating Payment: {authexception}")
             logging.exception(authexception)
             raise authexception
@@ -373,9 +371,8 @@ class QBOController:
             else:
                 return False
         except AuthorizationException as authexception:
-            if "Token expired" in authexception.detail:
-                self.auth_client.refresh(self.refresh_token)
-                print(f"QBO Controller: Token Expired, Refreshing Token")
+            self.auth_client.refresh(self.refresh_token)
+            print(f"QBO Controller: Token Expired, Refreshing Token")
             print(f"QBO Controller: Faild Checking Invoice Paid: {authexception}")
             logging.exception(authexception)
             raise authexception
