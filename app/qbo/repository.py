@@ -23,6 +23,7 @@ from quickbooks.objects import Customer, \
                                 SalesItemLine, \
                                 SalesItemLineDetail, \
                                 PaymentLine
+from quickbooks.exceptions import AuthorizationException
 
 class QBOController:
     def __init__(self,
@@ -42,8 +43,8 @@ class QBOController:
         self.environment = environment
         self.redirect_uri = redirect_uri
 
-        self.access_token = access_token
-        self.refresh_token = refresh_token
+        self.access_token = access_token if access_token else "unknown"
+        self.refresh_token = refresh_token if refresh_token else "unknown"
         self.state_token = state_token if state_token else "GlasscleanerOAuth"
         self.id_token = id_token
         self.realm_id = realm_id
@@ -96,6 +97,7 @@ class QBOController:
             company_name = billing_data["Proper Name"]
             company_name = company_name.strip()
             company_name = " ".join(word.capitalize() for word in company_name.split(" "))
+            company_name = company_name if insurance_companies.get(billing_data["Trading Partner"], None) == None else insurance_companies.get(billing_data["Trading Partner"], None)
             customer_list = Customer.filter(DisplayName=company_name if insurance_companies.get(billing_data["Trading Partner"], None) == None else insurance_companies.get(billing_data["Trading Partner"], None), qb=self.qb_client)
             
             if len(customer_list) > 0:
@@ -187,10 +189,16 @@ class QBOController:
             print(f"QBO Controller: New Sales Receipt Created - {billing_data['Job #'][1:]}")
             logging.info(f"QBO Controller: New Sales Receipt Created - {billing_data['Job #'][1:]}")
             return new_sales_receipt
+        except AuthorizationException as authexception:
+            if "Token expired" in authexception.detail:
+                self.auth_client.refresh(self.refresh_token)
+            print(f"QBO Controller: Faild Creating Sale receipt: {authexception}")
+            logging.exception(authexception)
+            raise authexception
         except Exception as e:
-            print(print(f"QBO Controller: Faild Creating Sale receipt {e}"))
+            print(print(f"QBO Controller: Faild Creating Sale receipt: {e}"))
             logging.exception(e)
-            return None
+            raise e
 
     async def create_invoice(self, payment_group_data, billing_data, customer=None) -> Invoice:
         try:
@@ -284,6 +292,12 @@ class QBOController:
             print(f"QBO Controller: New Invoice Created - {billing_data['Job #'][1:]}")
             logging.info(f"QBO Controller: New Invoice Created - {billing_data['Job #'][1:]}")
             return new_invoice
+        except AuthorizationException as authexception:
+            if "Token expired" in authexception.detail:
+                self.auth_client.refresh(self.refresh_token)
+            print(f"QBO Controller: Faild Creating Invoice: {authexception}")
+            logging.exception(authexception)
+            raise authexception
         except Exception as e:
             print(f"QBO Controller: Faild Creating Invoice {e}")
             logging.exception(e)
@@ -313,7 +327,7 @@ class QBOController:
                 if len(invoice_list) > 0:
                     new_invoice = invoice_list[0]
                 else:
-                    new_invoice = self.create_invoice(payment_group_data, billing_data, new_customer)
+                    new_invoice = await self.create_invoice(payment_group_data, billing_data, new_customer)
                 
                 payment_line_item = PaymentLine()
                 payment_line_item.Amount = float(payments_list[int(billing_data["Job #"][1:])]["amount"])
@@ -336,6 +350,12 @@ class QBOController:
             print(f"QBO Controller: New Payment Created- {payment_group_data['payments'][0]['job_id']}")
             logging.info(f"QBO Controller: New Payment Created- {payment_group_data['payments'][0]['job_id']}")
             return new_payment
+        except AuthorizationException as authexception:
+            if "Token expired" in authexception.detail:
+                self.auth_client.refresh(self.refresh_token)
+            print(f"QBO Controller: Faild Creating Payment: {authexception}")
+            logging.exception(authexception)
+            raise authexception
         except Exception as e:
             print(f"QBO Controller: Faild Creating Payment {e}")
             logging.exception(e)
@@ -350,21 +370,28 @@ class QBOController:
                     return True
             else:
                 return False
+        except AuthorizationException as authexception:
+            if "Token expired" in authexception.detail:
+                self.auth_client.refresh(self.refresh_token)
+            print(f"QBO Controller: Faild Checking Invoice Paid: {authexception}")
+            logging.exception(authexception)
+            raise authexception
         except Exception as e:
             print(f"QBO Controller: Faild Checking Invoice Paid {e}")
             logging.exception(e)
             return False
 
 class QboRepo:
-    async def create_setting(setting_data: dict, db: Session):
+    async def create_setting(setting_data: schema.QboSetting, db: Session):
         try:
             now = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S.%f")
             new_setting = model.QBSettings(
-                user_id=setting_data["user_id"],
-                client_id=setting_data["client_id"],
-                client_secret=setting_data["client_secret"],
-                refresh_token=setting_data["refresh_token"],
-                access_token=setting_data["access_token"],
+                user_id=setting_data.user_id,
+                client_id=setting_data.client_id,
+                client_secret=setting_data.client_secret,
+                refresh_token=setting_data.refresh_token,
+                access_token=setting_data.access_token,
+                realm_id=setting_data.realm_id,
                 created_at=now,
                 updated_at=now
             )
@@ -385,6 +412,8 @@ class QboRepo:
             setting = db.query(model.QBSettings).filter(model.QBSettings.id == setting_data["id"]).first()
             if setting:
                 for key, value in setting_data.items():
+                    if key == "id":
+                        continue
                     setattr(setting, key, value)
                 setattr(setting, "updated_at", now)
                 db.commit()

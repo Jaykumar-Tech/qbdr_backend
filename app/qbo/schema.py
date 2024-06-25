@@ -4,16 +4,36 @@ from pydantic import EmailStr
 from pydantic import BaseModel
 
 class QboSetting(BaseModel):
-    id: int
-    user_id: int
+    user_id: Optional[int]
     client_id: str
     client_secret: str
-    access_token: str
-    refresh_token: str
-    realm_id: str
+    access_token: Optional[str]
+    refresh_token: Optional[str]
+    realm_id: Optional[str]
+    auth_code: Optional[str]
+    realm_id: Optional[str]
     is_sandbox: bool
-    created_at: str
-    updated_at: str
+    created_at: Optional[str]
+    updated_at: Optional[str]
+
+class QboPayments(BaseModel):
+    id: int
+    job_id: int
+    amount: float
+    memo: Optional[str] = None
+    consumer_id: int
+    is_commercial: Optional[bool] = None
+    is_insurance: Optional[bool] = None
+    company_name: Optional[str] = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    total_balance: float
+    remaining_balance: float
+    remaining_deductible: float
+    year: Optional[int] = None
+    make: Optional[str] = None
+    model: Optional[str] = None
+    style: Optional[str] = None
 
 class QboPaymentGroup(BaseModel):
     total_amount: float
@@ -22,15 +42,16 @@ class QboPaymentGroup(BaseModel):
     shop_id: int
     type: str
     date: str
-    x_action_type: str
-    x_action_number: str
-    payment_account_id: str
+    x_action_type: Optional[str] = None
+    x_action_number: Optional[str] = None
+    payment_account_id: Optional[str] = None
     created: int
-    qbo_account_id: str
-    qbo_account_name: str
-    qb_exported: int
-    customer_name: str
-    payment_account_name: str
+    qbo_account_id: Optional[str] = None
+    qbo_account_name: Optional[str] = None
+    qb_exported: Optional[bool] = None
+    customer_name: Optional[str] = None
+    payment_account_name: Optional[str] = None
+    payments: List[QboPayments]
     
     def to_dict(self):
         return {
@@ -48,18 +69,20 @@ class QboPaymentGroup(BaseModel):
             "qbo_account_name": self.qbo_account_name,
             "qb_exported": self.qb_exported,
             "customer_name": self.customer_name,
-            "payment_account_name": self.payment_account_name
+            "payment_account_name": self.payment_account_name,
+            "payments": [payment.model_dump() for payment in self.payments]
         }
 
 class QboBillingData(BaseModel):
     job_id: int
-    refferal: int
-    vin: int
+    refferal: Optional[str] = ""
+    vin: Optional[str] = ""
     proper_name: str
-    trading_partner: str
-    year: int
-    make: str
-    model: str
+    trading_partner: Optional[str] = ""
+    year: Optional[str] = ""
+    make: Optional[str] = ""
+    model: Optional[str] = ""
+    sales_tax: Optional[float] = 0.0
     glass_backglass_replacement: Optional[float] = 0.0
     glass_quarterglass_replacement: Optional[float] = 0.0
     glass_sidewindow_replacement: Optional[float] = 0.0
@@ -84,6 +107,7 @@ class QboBillingData(BaseModel):
             "Year": self.year,
             "Make": self.make,
             "Model": self.model,
+            "Sales Tax": self.sales_tax,
             "Glass:Backglass Replacement": self.glass_backglass_replacement,
             "Glass:Quarter glass Replacement": self.glass_quarterglass_replacement,
             "Glass:Side window Replacement": self.glass_sidewindow_replacement,

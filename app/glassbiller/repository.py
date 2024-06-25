@@ -79,19 +79,17 @@ class GlassbillerRepo:
     
     async def get_job_by_jobid(db: Session, job_id: int, is_deductible: bool=False):
         try:
-            deductible = None
-            not_deductible = None
-            
-            deductible = db.query(model.GlassbillerJob).filter(model.GlassbillerJob.job_id == job_id).all()
-            if deductible:
-                deductible = deductible[-1]
-            not_deductible = db.query(model.GlassbillerJob).filter(model.GlassbillerJob.job_id == job_id).first()
-            
-            if deductible == not_deductible and is_deductible:
-                return None
+            if is_deductible == True:
+                query = db.query(model.GlassbillerJob).filter(and_(model.GlassbillerJob.job_id == job_id,
+                                                                  model.GlassbillerJob.insurance_discounts_deductible > 0))
             else:
-                return deductible if is_deductible else not_deductible
-           
+                query = db.query(model.GlassbillerJob).filter(and_(model.GlassbillerJob.job_id == job_id,
+                                                                  or_(model.GlassbillerJob.deductible == None,
+                                                                      model.GlassbillerJob.deductible == 0,
+                                                                      model.GlassbillerJob.deductible == '0',
+                                                                      model.GlassbillerJob.insurance_discounts_deductible < 0)))
+            db_job = query.first()
+            return db_job
         except Exception as e:
             print(f"Error occures when get job by jobid: {e}")
             db.rollback()
@@ -111,6 +109,14 @@ class GlassbillerRepo:
         except Exception as e:
             print(f"Error occures when get all insurance companies: {e}")
             db.rollback()
+    
+    async def get_all_data_keys(db: Session):
+        try:
+            return db.query(model.GlassbillerDataKey).all()
+        except Exception as e:
+            print(f"Error occures when get all data keys: {e}")
+            db.rollback()
+            return None
     
     async def parse_job_data(db: Session, job_data: dict) -> dict:
         csvColumns = "job_id,status,referral_number,vehicle.vin,consumer.name.last,consumer.name.first,commercialaccount_name,parts,invoice_date,total_materials,total_labor,total_subtotal,total_taxes,total_after_taxes,deductible,total_balance_after_payments,vehicle.year,vehicle.make,vehicle.model,vehicle.sub_model,vehicle.style,insurance_fleet_name,bill_to.consumer_edi.trading_partner"
@@ -146,12 +152,18 @@ class GlassbillerRepo:
                 row_data.update({ part["data_key"].qbo_product_service: round(float(row_data["Materials"]), 2) })
                 row_data.update({ "Glass:Labor": round(float(row_data["Labor"]), 2) })
                 material_field = part["data_key"].qbo_product_service
-                
-            elif part["data_key"].part_no in ["HAH000448", "HAH200448", "HAH"] and insurance_rate:
+        
+        for part in row_data["Parts"]:
+            if part.get("data_key", None) == None:
+                continue
+            if part["data_key"].part_no in ["HAH000448", "HAH200448", "HAH"] and insurance_rate:
                 row_data.update({ part["data_key"].qbo_product_service: round(float(insurance_rate.kit), 2) })
                 row_data.update({ material_field: round(float(row_data["Materials"]) - float(insurance_rate.kit), 2) })                        
-            
-            elif part["data_key"].part_no in ["Labor", "Deductible", "RECAL STATIC", "RECAL DYNAMIC", "RECAL DUALMETHOD", "RECAL-RTL-STATIC", "RECAL-RTL-DYNAMIC", "RECAL-RTL-BOTH"]:
+        
+        for part in row_data["Parts"]:
+            if part.get("data_key", None) == None:
+                continue
+            if part["data_key"].part_no in ["RECAL STATIC", "RECAL DYNAMIC", "RECAL DUALMETHOD", "RECAL-RTL-STATIC", "RECAL-RTL-DYNAMIC", "RECAL-RTL-BOTH"]:
                 if insurance_rate:
                     if part["data_key"].part_no in ["RECAL STATIC", "RECAL-RTL-STATIC"]:
                         row_data.update({ part["data_key"].qbo_product_service: round(float(insurance_rate.static), 2) })
@@ -174,9 +186,13 @@ class GlassbillerRepo:
                             "Glass:Labor": float(row_data["Labor"]) - 250,
                             "ADAS:Static Recalibration": 250
                         })
-            elif part["data_key"].part_no == "R&I":
+        
+        for part in row_data["Parts"]:
+            if part.get("data_key", None) == None:
+                continue
+            if part["data_key"].part_no == "R&I":
                 row_data.update({"Glass:R&I": float(row_data["Labor"])})
-
+                
         cus_name = f'{row_data["First Name"] if row_data["First Name"] else ""} {row_data["Last Name"] if row_data["Last Name"] else ""} {row_data["Commercial Account Name"] if row_data["Commercial Account Name"] else ""}'
         if bool(re.search(r'\(\d{3}\) \d{3}-\d{4}', cus_name)) or bool(re.search(r'\d{10}', cus_name)):
             row_data.update({ "Proper Name": "Customer" })

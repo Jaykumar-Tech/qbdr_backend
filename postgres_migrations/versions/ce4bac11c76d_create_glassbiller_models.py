@@ -1,8 +1,8 @@
 """create glassbiller models
 
-Revision ID: 63d91f3566cb
-Revises: 8d46c732457a
-Create Date: 2024-06-12 15:30:02.123918
+Revision ID: ce4bac11c76d
+Revises: c36e90a7be0c
+Create Date: 2024-06-20 17:06:14.012038
 
 """
 from typing import Sequence, Union
@@ -12,8 +12,8 @@ import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
-revision: str = '63d91f3566cb'
-down_revision: Union[str, None] = '8d46c732457a'
+revision: str = 'ce4bac11c76d'
+down_revision: Union[str, None] = 'c36e90a7be0c'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
@@ -84,6 +84,7 @@ def upgrade() -> None:
         sa.Column('id', sa.Integer(), nullable=False),
         sa.Column('part_no', sa.String(length=80), nullable=True),
         sa.Column('qbo_product_service', sa.String(length=80), nullable=True),
+        sa.Column('job_col_name', sa.String(30), nullable=True),
         sa.Column('created_at', sa.DateTime(), nullable=True),
         sa.Column('updated_at', sa.DateTime(), nullable=True),
         sa.PrimaryKeyConstraint('id')
