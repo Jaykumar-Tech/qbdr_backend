@@ -20,42 +20,46 @@ router = APIRouter()
 
 @router.get('/get_api_token', dependencies=[Depends(JWTBearer())], tags=["Glassbiller"])
 async def get_api_token():
-    login_detail = requests.post(url="https://auth.glassbiller.com/api/tenant/login",
-                                data={
-                                    "u": config("GLASSBILLER_EMAIL"),
-                                    "p": config("GLASSBILLER_PASSWORD"),
-                                    "tid": "glassbiller-prod"
-                                }).json()
+    try:
+        login_detail = requests.post(url="https://auth.glassbiller.com/api/tenant/login",
+                                    data={
+                                        "u": config("GLASSBILLER_EMAIL"),
+                                        "p": config("GLASSBILLER_PASSWORD"),
+                                        "tid": "glassbiller-prod"
+                                    }).json()
 
-    id_token = login_detail.get("idToken")
-    refresh_token = login_detail.get("refreshToken")
+        id_token = login_detail.get("idToken")
+        refresh_token = login_detail.get("refreshToken")
 
-    auth_header = {
-        "Authorization": f"Bearer {id_token}",
-        "Cookie": f"tenant-tid=glassbiller-prod; tenant-token={id_token}; tenant-refresh-token={refresh_token}"
-    }
+        auth_header = {
+            "Authorization": f"Bearer {id_token}",
+            "Cookie": f"tenant-tid=glassbiller-prod; tenant-token={id_token}; tenant-refresh-token={refresh_token}"
+        }
 
-    new_url = requests.get(url="https://auth.glassbiller.com/api/glassbiller/go",
-                        headers=auth_header).content
+        new_url = requests.get(url="https://auth.glassbiller.com/api/glassbiller/go",
+                            headers=auth_header).content
 
-    query_components = parse_qs(urlparse(new_url).query)
-    query_components = {key.decode('utf-8'): val[0].decode('utf-8') for key, val in query_components.items()}
-    auth_code = query_components['code'] if 'code' in query_components else None
-    auth_id = query_components['m'] if 'm' in query_components else None
+        query_components = parse_qs(urlparse(new_url).query)
+        query_components = {key.decode('utf-8'): val[0].decode('utf-8') for key, val in query_components.items()}
+        auth_code = query_components['code'] if 'code' in query_components else None
+        auth_id = query_components['m'] if 'm' in query_components else None
 
-    if auth_code is None or auth_id is None:
-        raise HTTPException(status_code=403, detail="Glassbiller Authentication Failed!")
+        if auth_code is None or auth_id is None:
+            raise HTTPException(status_code=403, detail="Glassbiller Authentication Failed!")
 
-    response = requests.post("https://auth.glassbiller.com/api/oauth/exchange",
-                            data={"t": auth_code, "a": auth_id})
-    if response.status_code == 200:
-        access_token = response.json().get("access_token")
-    else:
-        raise HTTPException(status_code=403, detail="Cannot find access token!")
-    
-    return {
-        "access_token": access_token
-    }
+        response = requests.post("https://auth.glassbiller.com/api/oauth/exchange",
+                                data={"t": auth_code, "a": auth_id})
+        if response.status_code == 200:
+            access_token = response.json().get("access_token")
+        else:
+            raise HTTPException(status_code=403, detail="Cannot find access token!")
+        
+        return {
+            "access_token": access_token
+        }
+    except Exception as e:
+        print(f"Error occures when get api token: {e}")
+        raise HTTPException(status_code=403, detail=str(e))
     
 @router.post("/search_payments", dependencies=[Depends(JWTBearer())], tags=["Glassbiller"])
 async def search_payments(date_range: gbSchema.DateRangeModel, request: Request, db: Session=Depends(get_db)):
