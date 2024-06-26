@@ -173,7 +173,7 @@ class GlassbillerRepo:
             for part in row_data["Parts"]:
                 if part.get("data_key", None) == None:
                     for key in data_keys:
-                        if key.glassbiller_product_service in part["description"]:
+                        if key.part_no in ["FW", "DW", "FB", "DB", "FD", "DD", "FQ", "DQ", "FV", "DV"] and key.glassbiller_product_service in part["description"]:
                             material_field.append(key.qbo_product_service)
         
         material_field = material_field[0]
