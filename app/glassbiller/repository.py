@@ -3,6 +3,8 @@ from sqlalchemy import extract, or_, and_
 from sqlalchemy.orm import Session
 from . import model, schema
 import datetime
+import requests
+import json
 
 from tools import get_nested_value
 class GlassbillerRepo:
@@ -134,7 +136,7 @@ class GlassbillerRepo:
             db.rollback()
             return None
     
-    async def parse_job_data(db: Session, job_data: dict) -> dict:
+    async def parse_job_data(db: Session, job_data: dict, access_token: str) -> dict:
         csvColumns = "job_id,status,referral_number,vehicle.vin,consumer.name.last,consumer.name.first,commercialaccount_name,parts,invoice_date,total_materials,total_labor,total_subtotal,total_taxes,total_after_taxes,deductible,total_balance_after_payments,vehicle.year,vehicle.make,vehicle.model,vehicle.sub_model,vehicle.style,insurance_fleet_name,bill_to.consumer_edi.trading_partner"
         csvColumnNames = "Job #,Job Type,Referral #,Vin #,Last Name,First Name,Commercial Account Name,Parts,Invoice Date,Materials,Labor,Sub-Total,Sales Tax,Total Invoice,Deductible,Balance Due,Year,Make,Model,Sub-Model,Style,Bill To,Trading Partner"
         
@@ -160,31 +162,67 @@ class GlassbillerRepo:
                 if key.part_no in part["part_number"]:
                     part["data_key"] = key
         
-        material_field = ""
+        material_field = []
         for part in row_data["Parts"]:
             if part.get("data_key", None) == None:
                 continue
             if part["data_key"].part_no in ["FW", "DW", "FB", "DB", "FD", "DD", "FQ", "DQ", "FV", "DV"]:
                 row_data.update({ part["data_key"].qbo_product_service: round(float(row_data["Materials"]), 2) })
                 row_data.update({ "Glass:Labor": round(float(row_data["Labor"]), 2) })
-                material_field = part["data_key"].qbo_product_service
+                material_field.append(part["data_key"].qbo_product_service)
         
         if len(material_field) == 0:
             for part in row_data["Parts"]:
                 if part.get("data_key", None) == None:
                     for key in data_keys:
                         if key.part_no in ["FW", "DW", "FB", "DB", "FD", "DD", "FQ", "DQ", "FV", "DV"] and key.glassbiller_product_service in part["description"]:
-                            material_field = key.qbo_product_service
-            material_field = material_field if material_field != "" else "Glass:Windshield Replacement"
+                            material_field.append(key.qbo_product_service)
+            material_field = material_field[0] if len(material_field) > 0 else "Glass:Windshield Replacement"
             row_data.update({ material_field: round(float(row_data["Materials"]), 2) })
             row_data.update({ "Glass:Labor": round(float(row_data["Labor"]), 2) })
         
+        elif len(material_field) == 1:
+            material_field = material_field[0]
+        
+        elif len(material_field) > 1:
+            request_headers = {
+                "Authorization": f"Bearer {access_token}",
+                "Content-Type": "application/json;charset=UTF-8",
+            }
+            job_detail_url = "https://uat.glassbiller.com/apollo/job-details"
+            job_detail_payload = {
+                "operationName": "getJobParts",
+                "variables": {
+                    "id": str(row_data["Job #"])
+                },
+                "query": "query getJobParts($id: ID!, $draft_id: ID) {\n  jobParts(id: $id, draft_id: $draft_id) {\n    ...PartFields\n    __typename\n  }\n}\n\nfragment PartFields on Part {\n  cost\n  description\n  discount\n  hours\n  id\n  is_adhesive_kit_part\n  is_chip\n  is_custom_part\n  is_glass\n  is_inventory_part\n  is_oem\n  is_premium\n  is_recal\n  item_id\n  labor_price\n  list_price\n  materials_price\n  moulding_discount\n  nagsid\n  order\n  order_status\n  part_number\n  po_quantity\n  quantity\n  shop_id\n  total_price\n  flat\n  glaxis_order_item_id\n  pilkington_order_item_id\n  american_order_item_id\n  __typename\n}\n"
+            }
+            response = requests.post(url=job_detail_url, data=json.dumps(job_detail_payload), headers=request_headers)
+            if response.status_code == 200:
+                job_part_data = response.json().get("data", {}).get("jobParts", [])
+                print(f"Job Part Data: {job_part_data}")
+                part_nos = []
+                for part in row_data["Parts"]:
+                    if part.get("data_key", None) == None:
+                        continue
+                    for mat in material_field:
+                        if part["data_key"].qbo_product_service == mat:
+                            part_nos.append((part["part_number"], mat))
+                print(f"Part Nos: {part_nos}")
+                for job_part in job_part_data:
+                    for part_no in part_nos:
+                        if job_part["part_number"] == part_no[0]:
+                            row_data.update({ part_no[1]: round(float(job_part["materials_price"]), 2) })
+            else:
+                print(f"Error: {response.text}")
+            material_field = material_field[0]
+        print(f"Material Field: {material_field}")
         for part in row_data["Parts"]:
             if part.get("data_key", None) == None:
                 continue
             if part["data_key"].part_no in ["HAH000448", "HAH200448", "HAH"] and insurance_rate:
                 row_data.update({ part["data_key"].qbo_product_service: round(float(insurance_rate.kit), 2) })
-                row_data.update({ material_field: round(float(row_data["Materials"]) - float(insurance_rate.kit), 2) })                        
+                row_data.update({ material_field: round(float(row_data[material_field]) - float(insurance_rate.kit), 2) })
         
         for part in row_data["Parts"]:
             if part.get("data_key", None) == None:

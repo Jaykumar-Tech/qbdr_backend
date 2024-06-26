@@ -115,7 +115,7 @@ async def get_job_detail(search_param: gbSchema.SearchPayloadModel, request: Req
         result = []
         res_data = response.json().get("rows", [])
         for job in res_data:
-            csv_job = await GlassbillerRepo.parse_job_data(db, job)
+            csv_job = await GlassbillerRepo.parse_job_data(db, job, search_param.access_token)
             db_job = await GlassbillerRepo.get_job_by_jobid(db, csv_job["Job #"])
             if db_job:
                 await GlassbillerRepo.update_job(db, db_job.id, csv_job)
