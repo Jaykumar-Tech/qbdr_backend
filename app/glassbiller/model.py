@@ -73,6 +73,7 @@ class GlassbillerDataKey(Base):
     part_no = Column(String(80))
     qbo_product_service = Column(String(80))
     job_col_name = Column(String(30))
+    glassbiller_product_service = Column(String(80))
     
     created_at = Column(DateTime)
     updated_at = Column(DateTime)
