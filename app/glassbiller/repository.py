@@ -160,23 +160,24 @@ class GlassbillerRepo:
                 if key.part_no in part["part_number"]:
                     part["data_key"] = key
         
-        material_field = []
+        material_field = ""
         for part in row_data["Parts"]:
             if part.get("data_key", None) == None:
                 continue
             if part["data_key"].part_no in ["FW", "DW", "FB", "DB", "FD", "DD", "FQ", "DQ", "FV", "DV"]:
                 row_data.update({ part["data_key"].qbo_product_service: round(float(row_data["Materials"]), 2) })
                 row_data.update({ "Glass:Labor": round(float(row_data["Labor"]), 2) })
-                material_field.append(part["data_key"].qbo_product_service)
+                material_field = part["data_key"].qbo_product_service
         
         if len(material_field) == 0:
             for part in row_data["Parts"]:
                 if part.get("data_key", None) == None:
                     for key in data_keys:
                         if key.part_no in ["FW", "DW", "FB", "DB", "FD", "DD", "FQ", "DQ", "FV", "DV"] and key.glassbiller_product_service in part["description"]:
-                            material_field.append(key.qbo_product_service)
-        
-        material_field = material_field[0]
+                            material_field = key.qbo_product_service
+            material_field = material_field if material_field != "" else "Glass:Windshield Replacement"
+            row_data.update({ material_field: round(float(row_data["Materials"]), 2) })
+            row_data.update({ "Glass:Labor": round(float(row_data["Labor"]), 2) })
         
         for part in row_data["Parts"]:
             if part.get("data_key", None) == None:
