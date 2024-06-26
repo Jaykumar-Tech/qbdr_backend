@@ -118,6 +118,22 @@ class GlassbillerRepo:
             db.rollback()
             return None
     
+    async def get_all_insurance_rates(db: Session):
+        try:
+            return db.query(model.GlassbillerInsuranceRate).all()
+        except Exception as e:
+            print(f"Error occures when get all insurance rates: {e}")
+            db.rollback()
+            return None
+    
+    async def get_all_qbo_payment_accounts(db: Session):
+        try:
+            return db.query(model.QBOPaymentAccount).all()
+        except Exception as e:
+            print(f"Error occures when get all qbo payment accounts: {e}")
+            db.rollback()
+            return None
+    
     async def parse_job_data(db: Session, job_data: dict) -> dict:
         csvColumns = "job_id,status,referral_number,vehicle.vin,consumer.name.last,consumer.name.first,commercialaccount_name,parts,invoice_date,total_materials,total_labor,total_subtotal,total_taxes,total_after_taxes,deductible,total_balance_after_payments,vehicle.year,vehicle.make,vehicle.model,vehicle.sub_model,vehicle.style,insurance_fleet_name,bill_to.consumer_edi.trading_partner"
         csvColumnNames = "Job #,Job Type,Referral #,Vin #,Last Name,First Name,Commercial Account Name,Parts,Invoice Date,Materials,Labor,Sub-Total,Sales Tax,Total Invoice,Deductible,Balance Due,Year,Make,Model,Sub-Model,Style,Bill To,Trading Partner"
@@ -144,14 +160,23 @@ class GlassbillerRepo:
                 if key.part_no in part["part_number"]:
                     part["data_key"] = key
         
-        material_field = ""
+        material_field = []
         for part in row_data["Parts"]:
             if part.get("data_key", None) == None:
                 continue
             if part["data_key"].part_no in ["FW", "DW", "FB", "DB", "FD", "DD", "FQ", "DQ", "FV", "DV"]:
                 row_data.update({ part["data_key"].qbo_product_service: round(float(row_data["Materials"]), 2) })
                 row_data.update({ "Glass:Labor": round(float(row_data["Labor"]), 2) })
-                material_field = part["data_key"].qbo_product_service
+                material_field.append(part["data_key"].qbo_product_service)
+        
+        if len(material_field) == 0:
+            for part in row_data["Parts"]:
+                if part.get("data_key", None) == None:
+                    for key in data_keys:
+                        if key.glassbiller_product_service in part["description"]:
+                            material_field.append(key.qbo_product_service)
+        
+        material_field = material_field[0]
         
         for part in row_data["Parts"]:
             if part.get("data_key", None) == None:

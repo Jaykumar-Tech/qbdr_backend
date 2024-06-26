@@ -142,3 +142,43 @@ async def get_job_detail(search_param: gbSchema.SearchPayloadModel, request: Req
     else:
         print(response.reason)
         raise HTTPException(status_code=response.status_code, detail=response.reason)
+
+@router.get("/get_data_keys", dependencies=[Depends(JWTBearer())], tags=["Glassbiller"])
+async def get_data_keys(request: Request, db: Session=Depends(get_db)):
+    user_id = get_user_id(request)
+    
+    data_keys = await GlassbillerRepo.get_all_data_keys(db)
+    
+    return {
+        "data_keys": data_keys
+    }
+
+@router.get("/get_insurance_companies", dependencies=[Depends(JWTBearer())], tags=["Glassbiller"])
+async def get_insurance_companies(request: Request, db: Session=Depends(get_db)):
+    user_id = get_user_id(request)
+
+    insurance_companies = await GlassbillerRepo.get_all_insurance_companies(db)
+
+    return {
+        "insurance_companies": insurance_companies
+    }
+
+@router.get("/get_insurance_rates", dependencies=[Depends(JWTBearer())], tags=["Glassbiller"])
+async def get_insurance_rates(request: Request, db: Session=Depends(get_db)):
+    user_id = get_user_id(request)
+    
+    insurance_rates = await GlassbillerRepo.get_all_insurance_rates(db)
+    
+    return {
+        "insurance_rates": insurance_rates
+    }
+
+@router.get("/get_qbo_payment_accounts", dependencies=[Depends(JWTBearer())], tags=["Glassbiller"])
+async def get_qbo_payment_accounts(request: Request, db: Session=Depends(get_db)):
+    user_id = get_user_id(request)
+
+    qbo_payment_accounts = await GlassbillerRepo.get_all_qbo_payment_accounts(db)
+
+    return {
+        "qbo_payment_accounts": qbo_payment_accounts
+    }

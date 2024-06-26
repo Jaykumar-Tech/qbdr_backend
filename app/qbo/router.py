@@ -235,7 +235,7 @@ async def export_to_qbo(payment_data: qbSchema.QboPaymentGroup, request: Request
                 "Trading Partner": result_job.trading_partner,
                 "Year": f'#{result_job.year}',
                 "Make": result_job.make,
-                "Model": result_job.model,
+                "Model": f'#{result_job.model}',
                 "Sales Tax": result_job.sales_tax,
             })
             
@@ -283,7 +283,7 @@ async def export_to_qbo(payment_data: qbSchema.QboPaymentGroup, request: Request
                     "Trading Partner": result_job.trading_partner,
                     "Year": f'#{result_job.year}',
                     "Make": result_job.make,
-                    "Model": result_job.model,
+                    "Model": f'#{result_job.model}',
                     "Sales Tax": result_job.sales_tax,
                 })
                 
