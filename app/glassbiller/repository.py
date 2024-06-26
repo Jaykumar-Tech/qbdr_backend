@@ -217,7 +217,10 @@ class GlassbillerRepo:
             if part.get("data_key", None) == None:
                 continue
             if part["data_key"].part_no == "R&I":
-                row_data.update({"Glass:R&I": float(row_data["Labor"])})
+                row_data.update({
+                    "Glass:R&I": float(row_data["Labor"]),
+                    "Glass:Labor": None
+                })
                 
         cus_name = f'{row_data["First Name"] if row_data["First Name"] else ""} {row_data["Last Name"] if row_data["Last Name"] else ""} {row_data["Commercial Account Name"] if row_data["Commercial Account Name"] else ""}'
         if bool(re.search(r'\(\d{3}\) \d{3}-\d{4}', cus_name)) or bool(re.search(r'\d{10}', cus_name)):
