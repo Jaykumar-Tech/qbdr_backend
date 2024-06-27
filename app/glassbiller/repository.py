@@ -159,7 +159,7 @@ class GlassbillerRepo:
                 row_data.update({
                     key.qbo_product_service: None
                 })
-                if key.part_no in ["FW", "DW", "FB", "DB", "FD", "DD", "FQ", "DQ", "FV", "DV"]
+                if key.part_no in ["FW", "DW", "FB", "DB", "FD", "DD", "FQ", "DQ", "FV", "DV"]:
                     if key.part_no in part["part_number"][0:2]:
                         part["data_key"] = key
                 else:
