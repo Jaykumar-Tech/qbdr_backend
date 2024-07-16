@@ -245,3 +245,23 @@ async def get_qbo_payment_accounts(request: Request, db: Session=Depends(get_db)
     return {
         "qbo_payment_accounts": qbo_payment_accounts
     }
+
+@router.post("/update_qbo_payment_accounts", dependencies=[Depends(JWTBearer())], tags=["Glassbiller"])
+async def update_qbo_payment_accounts(qbo_payment_account: gbSchema.QBOPaymentAccountModel, request: Request, db: Session=Depends(get_db)):
+    user_id = get_user_id(request)
+    qbo_payment_account = await GlassbillerRepo.update_qbo_payment_accounts(db, qbo_payment_account.model_dump())
+    if qbo_payment_account:
+        return {
+            "qbo_payment_account": qbo_payment_account
+        }
+    else:
+        raise HTTPException(status_code=400, detail="Update QBO Payment Account Failed!")
+
+@router.get("/delete_qbo_payment_accounts/{id}", dependencies=[Depends(JWTBearer())], tags=["Glassbiller"])
+async def delete_qbo_payment_accounts(id: int, request: Request, db: Session=Depends(get_db)):
+    user_id = get_user_id(request)
+    qbo_payment_account = await GlassbillerRepo.delete_qbo_payment_accounts(db, id)
+    if qbo_payment_account:
+        return "success"
+    else:
+        raise HTTPException(status_code=400, detail="Delete QBO Payment Account Failed!")

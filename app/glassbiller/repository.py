@@ -268,6 +268,48 @@ class GlassbillerRepo:
             db.rollback()
             return None
     
+    async def update_qbo_payment_accounts(db: Session, row_data: dict):
+        try:
+            now = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S.%f")
+            qbo_payment_account = db.query(model.QBOPaymentAccount).filter(model.QBOPaymentAccount.id == row_data["id"]).first()
+            if qbo_payment_account:
+                for key, value in row_data.items():
+                    if key != "id":
+                        setattr(qbo_payment_account, key, value)
+                setattr(qbo_payment_account, "updated_at", now)
+                db.commit()
+                db.refresh(qbo_payment_account)
+            else:
+                qbo_payment_account = model.QBOPaymentAccount(
+                    id = row_data["id"],
+                    payment_method = row_data.get("payment_method", None),
+                    deposit_account = row_data.get("deposit_account", None),
+                    created_at = now,
+                    updated_at = now
+                )
+                db.add(qbo_payment_account)
+                db.commit()
+                db.refresh(qbo_payment_account)
+            return qbo_payment_account
+        except Exception as e:
+            print(f"Error occures when update qbo payment accounts: {e}")
+            db.rollback()
+            return None
+    
+    async def delete_qbo_payment_accounts(db: Session, id: int):
+        try:
+            qbo_payment_account = db.query(model.QBOPaymentAccount).filter(model.QBOPaymentAccount.id == id).first()
+            if qbo_payment_account:
+                db.delete(qbo_payment_account)
+                db.commit()
+                return True
+            else:
+                return False
+        except Exception as e:
+            print(f"Error occures when delete qbo payment accounts: {e}")
+            db.rollback()
+            return False
+    
     async def parse_job_data(db: Session, job_data: dict, access_token: str) -> dict:
         csvColumns = "job_id,status,referral_number,vehicle.vin,consumer.name.last,consumer.name.first,commercialaccount_name,parts,invoice_date,total_materials,total_labor,total_subtotal,total_taxes,total_after_taxes,deductible,total_balance_after_payments,vehicle.year,vehicle.make,vehicle.model,vehicle.sub_model,vehicle.style,insurance_fleet_name,bill_to.consumer_edi.trading_partner"
         csvColumnNames = "Job #,Job Type,Referral #,Vin #,Last Name,First Name,Commercial Account Name,Parts,Invoice Date,Materials,Labor,Sub-Total,Sales Tax,Total Invoice,Deductible,Balance Due,Year,Make,Model,Sub-Model,Style,Bill To,Trading Partner"

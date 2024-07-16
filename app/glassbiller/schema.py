@@ -87,3 +87,10 @@ class DataKeyModel(BaseModel):
     qbo_product_service: Optional[str]
     created_at: Optional[str]
     updated_at: Optional[str]
+
+class QBOPaymentAccountModel(BaseModel):
+    id: int = 0
+    payment_method: Optional[str]
+    deposit_account: Optional[str]
+    created_at: Optional[str]
+    updated_at: Optional[str]
