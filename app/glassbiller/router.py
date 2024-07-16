@@ -153,6 +153,27 @@ async def get_data_keys(request: Request, db: Session=Depends(get_db)):
         "data_keys": data_keys
     }
 
+@router.post("/update_data_keys", dependencies=[Depends(JWTBearer())], tags=["Glassbiller"])
+async def update_data_keys(data_key: gbSchema.DataKeyModel, request: Request, db: Session=Depends(get_db)):
+    user_id = get_user_id(request)
+
+    data_key = await GlassbillerRepo.update_data_keys(db, data_key.model_dump())
+    if data_key:
+        return {
+            "data_key": data_key,
+        }
+    else:
+        raise HTTPException(status_code=404, detail="Data key not found")
+
+@router.get("/delete_data_keys/{id}", dependencies=[Depends(JWTBearer())], tags=["Glassbiller"])
+async def delete_data_keys(id: int, request: Request, db: Session=Depends(get_db)):
+    user_id = get_user_id(request)
+    data_key = await GlassbillerRepo.delete_data_keys(db, id)
+    if data_key:
+        return "sucess"
+    else:
+        raise HTTPException(status_code=404, detail="Data key not found")
+
 @router.get("/get_insurance_companies", dependencies=[Depends(JWTBearer())], tags=["Glassbiller"])
 async def get_insurance_companies(request: Request, db: Session=Depends(get_db)):
     user_id = get_user_id(request)

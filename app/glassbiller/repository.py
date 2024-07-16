@@ -163,6 +163,50 @@ class GlassbillerRepo:
             db.rollback()
             return None
     
+    async def update_data_keys(db: Session, row_data: dict):
+        try:
+            now = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S.%f")
+            data_key = db.query(model.GlassbillerDataKey).filter(model.GlassbillerDataKey.id == row_data["id"]).first()
+            if data_key:
+                for key, value in row_data.items():
+                    if key != "id":
+                        setattr(data_key, key, value)
+                setattr(data_key, "updated_at", now)
+                db.commit()
+                db.refresh(data_key)
+            else:
+                data_key = model.GlassbillerDataKey(
+                    id = row_data["id"],
+                    part_no = row_data.get("part_no", None),
+                    qbo_product_service = row_data.get("qbo_product_service", None),
+                    job_col_name = row_data.get("job_col_name", None),
+                    glassbiller_product_service = row_data.get("glassbiller_product_service", None),
+                    created_at = now,
+                    updated_at = now
+                )
+                db.add(data_key)
+                db.commit()
+                db.refresh(data_key)
+            return data_key
+        except Exception as e:
+            print(f"Error occures when update data keys: {e}")
+            db.rollback()
+            return None
+    
+    async def delete_data_keys(db: Session, id: int):
+        try:
+            data_key = db.query(model.GlassbillerDataKey).filter(model.GlassbillerDataKey.id == id).first()
+            if data_key:
+                db.delete(data_key)
+                db.commit()
+                return True
+            else:
+                return False
+        except Exception as e:
+            print(f"Error occures when delete data keys: {e}")
+            db.rollback()
+            return False
+    
     async def get_all_insurance_rates(db: Session):
         try:
             return db.query(model.GlassbillerInsuranceRate).all()

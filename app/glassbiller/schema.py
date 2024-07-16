@@ -80,3 +80,10 @@ class InsuranceRateModel(BaseModel):
     dual: Optional[float]
     created_at: Optional[str]
     updated_at: Optional[str]
+
+class DataKeyModel(BaseModel):
+    id: int = 0
+    part_no: Optional[str]
+    qbo_product_service: Optional[str]
+    created_at: Optional[str]
+    updated_at: Optional[str]
