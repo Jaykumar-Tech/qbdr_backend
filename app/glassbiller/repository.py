@@ -112,25 +112,6 @@ class GlassbillerRepo:
             print(f"Error occures when get all insurance companies: {e}")
             db.rollback()
     
-    async def create_insurance_company(db: Session, row_data: dict):
-        try:
-            now = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S.%f")
-            new_insurance_company = model.InsuranceCompany(
-                trading_partner = row_data.get("trading_partner", None),
-                company_name = row_data.get("company_name", None),
-                created_at = now,
-                updated_at = now
-            )
-
-            db.add(new_insurance_company)
-            db.commit()
-            db.refresh(new_insurance_company)
-            return new_insurance_company
-        except Exception as e:
-            print(f"Error occures when create new insurance company: {e}")
-            db.rollback()
-            return
-    
     async def delete_insurance_company(db: Session, id: int):
         try:
             insurance_company = db.query(model.InsuranceCompany).filter(model.InsuranceCompany.id == id).first()
@@ -189,6 +170,51 @@ class GlassbillerRepo:
             print(f"Error occures when get all insurance rates: {e}")
             db.rollback()
             return None
+    
+    async def update_insurance_rates(db: Session, row_data: dict):
+        try:
+            now = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S.%f")
+            insurance_rate = db.query(model.GlassbillerInsuranceRate).filter(model.GlassbillerInsuranceRate.id == row_data["id"]).first()
+            if insurance_rate:
+                for key, value in row_data.items():
+                    if key != "id":
+                        setattr(insurance_rate, key, value)
+                setattr(insurance_rate, "updated_at", now)
+                db.commit()
+                db.refresh(insurance_rate)
+            else:
+                insurance_rate = model.GlassbillerInsuranceRate(
+                    id = row_data["id"],
+                    company = row_data.get("company", None),
+                    kit = row_data.get("kit", None),
+                    static = row_data.get("static", None),
+                    dynamic = row_data.get("dynamic", None),
+                    dual = row_data.get("dual", None),
+                    created_at = now,
+                    updated_at = now
+                )
+                db.add(insurance_rate)
+                db.commit()
+                db.refresh(insurance_rate)
+            return insurance_rate
+        except Exception as e:
+            print(f"Error occures when update insurance rates: {e}")
+            db.rollback()
+            return None
+    
+    async def delete_insurance_rates(db: Session, id: int):
+        try:
+            insurance_rate = db.query(model.GlassbillerInsuranceRate).filter(model.GlassbillerInsuranceRate.id == id).first()
+            if insurance_rate:
+                db.delete(insurance_rate)
+                db.commit()
+                return True
+            else:
+                return False
+        except Exception as e:
+            print(f"Error occures when delete insurance rates: {e}")
+            db.rollback()
+            return False
     
     async def get_all_qbo_payment_accounts(db: Session):
         try:

@@ -70,3 +70,13 @@ class InsuranceCompanyModel(BaseModel):
     company_name: str
     created_at: Optional[str]
     updated_at: Optional[str]
+    
+class InsuranceRateModel(BaseModel):
+    id: int = 0
+    company: str
+    kit: Optional[float]
+    static: Optional[float]
+    dynamic: Optional[float]
+    dual: Optional[float]
+    created_at: Optional[str]
+    updated_at: Optional[str]
