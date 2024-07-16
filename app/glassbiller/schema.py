@@ -63,3 +63,10 @@ class SearchPayloadModel(GlassbillerBase):
 class DateRangeModel(GlassbillerBase):
     start_date: str
     end_date: Optional[str]
+
+class InsuranceCompanyModel(BaseModel):
+    id: int = 0
+    trading_partner: str
+    company_name: str
+    created_at: Optional[str]
+    updated_at: Optional[str]

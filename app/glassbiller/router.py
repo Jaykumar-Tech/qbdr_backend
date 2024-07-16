@@ -163,15 +163,48 @@ async def get_insurance_companies(request: Request, db: Session=Depends(get_db))
         "insurance_companies": insurance_companies
     }
 
+@router.post("/add_insurance_company", dependencies=[Depends(JWTBearer())], tags=["Glassbiller"])
+async def add_insurance_company(insurance_company: gbSchema.InsuranceCompanyModel, request: Request, db: Session=Depends(get_db)):
+    user_id = get_user_id(request)
+    insurance_company = await GlassbillerRepo.create_insurance_company(db, insurance_company.model_dump())
+    if insurance_company:
+        return {
+            "insurance_company": insurance_company
+        }
+    else:
+        raise HTTPException(status_code=400, detail="Create Insurance company Failed!")
+
+@router.post("/update_insurance_company", dependencies=[Depends(JWTBearer())], tags=["Glassbiller"])
+async def update_insurance_company(insurance_company: gbSchema.InsuranceCompanyModel, request: Request, db: Session=Depends(get_db)):
+    user_id = get_user_id(request)
+    insurance_company = await GlassbillerRepo.update_insurance_company(db, insurance_company.model_dump())
+    if insurance_company:
+        return {
+            "insurance_company": insurance_company
+        }
+    else:
+        raise HTTPException(status_code=400, detail="Update Insurance company Failed!")
+
+@router.get("/delete_insurance_company/{id}", dependencies=[Depends(JWTBearer())], tags=["Glassbiller"])
+async def delete_insurance_company(id: int, request: Request, db: Session=Depends(get_db)):
+    user_id = get_user_id(request)
+    insurance_company = await GlassbillerRepo.delete_insurance_company(db, id)
+    if insurance_company:
+        return "success"
+    else:
+        raise HTTPException(status_code=400, detail="Delete Insurance company Failed!")
+
 @router.get("/get_insurance_rates", dependencies=[Depends(JWTBearer())], tags=["Glassbiller"])
 async def get_insurance_rates(request: Request, db: Session=Depends(get_db)):
     user_id = get_user_id(request)
     
     insurance_rates = await GlassbillerRepo.get_all_insurance_rates(db)
-    
-    return {
-        "insurance_rates": insurance_rates
-    }
+    if insurance_rates:
+        return {
+            "insurance_rates": insurance_rates
+        }
+    else:
+        raise HTTPException(status_code=400, detail="Get Insurance Rates Failed!")
 
 @router.get("/get_qbo_payment_accounts", dependencies=[Depends(JWTBearer())], tags=["Glassbiller"])
 async def get_qbo_payment_accounts(request: Request, db: Session=Depends(get_db)):

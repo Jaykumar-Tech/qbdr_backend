@@ -27,6 +27,6 @@ app.include_router(glassbiller_router, prefix="/api/glassbiller")
 app.include_router(qbo_router, prefix="/api/qbo")
 
 # route handlers
-@app.exception_handler(404)
-async def not_found_404(request, exc):
-    return FileResponse("static/index.html")
+# @app.exception_handler(404)
+# async def not_found_404(request, exc):
+#     return FileResponse("static/index.html")

@@ -112,6 +112,68 @@ class GlassbillerRepo:
             print(f"Error occures when get all insurance companies: {e}")
             db.rollback()
     
+    async def create_insurance_company(db: Session, row_data: dict):
+        try:
+            now = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S.%f")
+            new_insurance_company = model.InsuranceCompany(
+                trading_partner = row_data.get("trading_partner", None),
+                company_name = row_data.get("company_name", None),
+                created_at = now,
+                updated_at = now
+            )
+
+            db.add(new_insurance_company)
+            db.commit()
+            db.refresh(new_insurance_company)
+            return new_insurance_company
+        except Exception as e:
+            print(f"Error occures when create new insurance company: {e}")
+            db.rollback()
+            return
+    
+    async def delete_insurance_company(db: Session, id: int):
+        try:
+            insurance_company = db.query(model.InsuranceCompany).filter(model.InsuranceCompany.id == id).first()
+            if insurance_company:
+                db.delete(insurance_company)
+                db.commit()
+                return True
+            else:
+                return False
+        except Exception as e:
+            print(f"Error occures when delete insurance company: {e}")
+            db.rollback()
+            return False
+            
+    async def update_insurance_company(db: Session, row_data: dict):
+        try:
+            now = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S.%f")
+            insurance_company = db.query(model.InsuranceCompany).filter(model.InsuranceCompany.id == row_data["id"]).first()
+            if insurance_company:
+                for key, value in row_data.items():
+                    if key != "id":
+                        setattr(insurance_company, key, value)
+                setattr(insurance_company, "updated_at", now)
+                db.commit()
+                db.refresh(insurance_company)
+            else:
+                insurance_company = model.InsuranceCompany(
+                    id = row_data["id"],
+                    trading_partner = row_data.get("trading_partner", None),
+                    company_name = row_data.get("company_name", None),
+                    created_at = now,
+                    updated_at = now
+                )
+
+                db.add(insurance_company)
+                db.commit()
+                db.refresh(insurance_company)
+            return insurance_company
+        except Exception as e:
+            print(f"Error occures when update insurance company: {e}")
+            db.rollback()
+            return None
+    
     async def get_all_data_keys(db: Session):
         try:
             return db.query(model.GlassbillerDataKey).all()
