@@ -60,6 +60,49 @@ class SearchPayloadModel(GlassbillerBase):
     csvRow_export: Optional[str] = ""
     csvAllRowsSelected: Optional[str] = ""
 
+class JobDetailModel(BaseModel):
+    id: int = 0
+    job_id: int
+    job_type: str
+    refferal: Optional[int]
+    vin: Optional[str]
+    first_name: Optional[str]
+    last_name: Optional[str]
+    commercial_account_name: Optional[str]
+    parts: Optional[str]
+    invoice_date: Optional[str]
+    materials: Optional[float]
+    labor: Optional[float]
+    sub_total: Optional[float]
+    sales_tax: Optional[float]
+    total_invoice: Optional[float]
+    deductible: Optional[float]
+    balance_due: Optional[float]
+    year: Optional[int]
+    make: Optional[str]
+    model: Optional[str]
+    sub_model: Optional[str]
+    style: Optional[str]
+    bill_to: Optional[str]
+    trading_partner: Optional[str]
+    proper_name: Optional[str]
+    glass_backglass_replacement: Optional[float]
+    glass_quarterglass_replacement: Optional[float]
+    glass_sidewindow_replacement: Optional[float]
+    glass_windshield_replacement: Optional[float]
+    glass_kit: Optional[float]
+    glass_labor: Optional[float]
+    glass_molding: Optional[float]
+    glass_RandI: Optional[float]
+    adas_dual_recalibration: Optional[float]
+    adas_dynamic_recalibration: Optional[float]
+    adas_static_recalibration: Optional[float]
+    insurance_discounts_deductible: Optional[float]
+    insurance_discounts_adjustment: Optional[float]
+    paid: Optional[bool]
+    created_at: Optional[str]
+    updated_at: Optional[str]
+
 class DateRangeModel(GlassbillerBase):
     start_date: str
     end_date: Optional[str]

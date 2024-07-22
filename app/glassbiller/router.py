@@ -143,6 +143,54 @@ async def get_job_detail(search_param: gbSchema.SearchPayloadModel, request: Req
         print(response.reason)
         raise HTTPException(status_code=response.status_code, detail=response.reason)
 
+@router.post("/update_job_detail", dependencies=[Depends(JWTBearer())], tags=["Glassbiller"])
+async def update_job_detail(request: Request, db: Session=Depends(get_db)):
+    data = await request.json()
+    job_detail = {
+        'job_id': data.get("Job #", None),
+        'job_type': data.get("Job Type", None),
+        'refferal': data.get("Refferal #", None),
+        'vin': data.get("Vin #", None),
+        'first_name': data.get("First Name", None),
+        'last_name': data.get("Last Name", None),
+        'commercial_account_name': data.get("Commercial Account Name", None),
+        'parts': data.get("Parts", None),
+        'invoice_date': data.get("Invoice Date", None),
+        'materials': data.get("Materials", None),
+        'labor': data.get("Labor", None),
+        'sub_total': data.get("Sub Total", None),
+        'sales_tax': data.get("Sales Tax", None),
+        'total_invoice': data.get("Total Invoice", None),
+        'deductible': data.get("Deductible", None),
+        'balance_due': data.get("Balance Due", None),
+        'year': data.get("Year", None),
+        'make': data.get("Make", None),
+        'model': data.get("Model", None),
+        'sub_model': data.get("Sub Model", None),
+        'style': data.get("Style", None),
+        'bill_to': data.get("Bill To", None),
+        'trading_partner': data.get("Trading Partner", None),
+        'proper_name': data.get("Proper Name", None),
+        'glass_backglass_replacement': data.get("Glass:Backglass Replacement", None),
+        'glass_quarterglass_replacement': data.get("Glass:Quarterglass Replacement", None),
+        'glass_sidewindow_replacement': data.get("Glass:Side window Replacement", None),
+        'glass_windshield_replacement': data.get("Glass:Windshield Replacement", None),
+        'glass_kit': data.get("Glass:Kit", None),
+        'glass_labor': data.get("Glass:Labor", None),
+        'glass_molding': data.get("Glass:Molding", None),
+        'glass_RandI': data.get("Glass:R&I", None),
+        'adas_dual_recalibration': data.get("ADAS:Dual Recalibration", None),
+        'adas_dynamic_recalibration': data.get("ADAS:Dynamic Recalibration", None),
+        'adas_static_recalibration': data.get("ADAS:Static Recalibration", None),
+        'insurance_discounts_deductible': data.get("Insurance Discounts:Deductible", None),
+        'insurance_discounts_adjustment': data.get("Insurance Discounts:Adjustment", None),
+    }
+    job = await GlassbillerRepo.update_job_with_deductible(db, job_detail["job_id"], job_detail)
+    if job:
+        return job
+    else:
+        raise HTTPException(status_code=400, detail="Job not found")
+
 @router.get("/get_data_keys", dependencies=[Depends(JWTBearer())], tags=["Glassbiller"])
 async def get_data_keys(request: Request, db: Session=Depends(get_db)):
     user_id = get_user_id(request)

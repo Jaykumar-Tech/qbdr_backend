@@ -301,7 +301,7 @@ class QBOController:
         except Exception as e:
             print(f"QBO Controller: Faild Creating Invoice {e}")
             logging.exception(e)
-            return None
+            raise e
 
     async def create_payment(self, payment_group_data, billing_data_list, insurance_companies, payment_method_to_account) -> Payment:
         try:
@@ -359,7 +359,7 @@ class QBOController:
         except Exception as e:
             print(f"QBO Controller: Faild Creating Payment {e}")
             logging.exception(e)
-            return None
+            raise e
 
     async def check_invoice_paid(self, docnumber):
         try:

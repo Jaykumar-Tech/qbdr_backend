@@ -79,6 +79,42 @@ class GlassbillerRepo:
             db.rollback()
             return None
     
+    async def update_job_with_deductible(db: Session, job_id, row_data: dict):
+        try:
+            now = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M:%S.%f")
+            jobs = db.query(model.GlassbillerJob).filter(model.GlassbillerJob.job_id == job_id).all()
+            if len(jobs) == 0:
+                return None
+            elif len(jobs) == 1:
+                job = jobs[0]
+                for key, value in row_data.items():
+                    setattr(job, key, value)
+                setattr(job, "updated_at", now)
+                db.commit()
+                db.refresh(job)
+                return job
+            else:
+                if float(row_data.get("insurance_discounts_deductible", None)) < 0:
+                    query = db.query(model.GlassbillerJob).filter(and_(model.GlassbillerJob.job_id == job_id,
+                                                                  or_(model.GlassbillerJob.deductible == None,
+                                                                      model.GlassbillerJob.deductible == 0,
+                                                                      model.GlassbillerJob.deductible == '0',
+                                                                      model.GlassbillerJob.insurance_discounts_deductible < 0)))
+                else:
+                    query = db.query(model.GlassbillerJob).filter(and_(model.GlassbillerJob.job_id == job_id,
+                                                                  model.GlassbillerJob.insurance_discounts_deductible > 0))
+                db_job = query.first()
+                for key, value in row_data.items():
+                    setattr(db_job, key, value)
+                setattr(db_job, "updated_at", now)
+                db.commit()
+                db.refresh(db_job)
+                return db_job
+        except Exception as e:
+            print(f"Error occures when update job: {e}")
+            db.rollback()
+            return None
+    
     async def get_job_by_jobid(db: Session, job_id: int, is_deductible: bool=False):
         try:
             if is_deductible == True:
