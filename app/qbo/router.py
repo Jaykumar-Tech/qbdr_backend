@@ -25,6 +25,7 @@ async def save_qbo_settings(qbo_settings: qbSchema.QboSetting, request: Request,
     try:
         user_id = get_user_id(request)
         qbo_settings.user_id = user_id
+        print(config("QBO_OAUTH_REDIRECT_URL"))
         qb_controller = QBOController(
             client_id=qbo_settings.client_id,
             client_secret=qbo_settings.client_secret,
