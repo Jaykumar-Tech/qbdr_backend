@@ -25,7 +25,6 @@ async def save_qbo_settings(qbo_settings: qbSchema.QboSetting, request: Request,
     try:
         user_id = get_user_id(request)
         qbo_settings.user_id = user_id
-        print(config("QBO_OAUTH_REDIRECT_URL"))
         qb_controller = QBOController(
             client_id=qbo_settings.client_id,
             client_secret=qbo_settings.client_secret,
@@ -67,7 +66,7 @@ async def get_authuri(qb_settings: qbSchema.QboSetting, request: Request, db: Se
             client_id=qb_settings.client_id,
             client_secret=qb_settings.client_secret,
             environment="sandbox" if qb_settings.is_sandbox else "production",
-            redirect_uri="http://localhost:3000/redirect_url" if qb_settings.is_sandbox else "https://glasscleaner.oceanautoglass.net/redirect_url"
+            redirect_uri=config("QBO_OAUTH_REDIRECT_URL")
         )
     else:
         qb_controller = QBOController(
@@ -77,7 +76,7 @@ async def get_authuri(qb_settings: qbSchema.QboSetting, request: Request, db: Se
             refresh_token=qbo_settings.refresh_token,
             realm_id=qbo_settings.realm_id,
             environment="sandbox" if qbo_settings.is_sandbox else "production",
-            redirect_uri="http://localhost:3000/redirect_url" if qb_settings.is_sandbox else "https://glasscleaner.oceanautoglass.net/redirect_url"
+            redirect_uri=config("QBO_OAUTH_REDIRECT_URL")
         )
     await qb_controller.init()
     auth_uri = await qb_controller.get_authUri()
