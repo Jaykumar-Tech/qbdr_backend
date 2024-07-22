@@ -1,17 +1,12 @@
-import time
-import json
-import requests
 from decouple import config
-from urllib.parse import urlparse, parse_qs
 
 from fastapi import APIRouter, Request, Depends, HTTPException
 from sqlalchemy.orm import Session
 
 from database import get_db
-from tools import get_user_id, send_email
+from tools import get_user_id
 
 from app.auth.auth_bearer import JWTBearer
-from app.auth.auth_handler import signJWT, generateJWT, decode_token
 
 from . import schema as qbSchema
 from .repository import QboRepo, QBOController
@@ -34,7 +29,7 @@ async def save_qbo_settings(qbo_settings: qbSchema.QboSetting, request: Request,
             client_id=qbo_settings.client_id,
             client_secret=qbo_settings.client_secret,
             environment="sandbox" if qbo_settings.is_sandbox else "production",
-            redirect_uri="http://localhost:3000/redirect_url" if qbo_settings.is_sandbox else "https://glasscleaner.oceanautoglass.net/redirect_url"
+            redirect_uri=config("QBO_OAUTH_REDIRECT_URL")
         )
         await qb_controller.init()
         qb_controller.auth_client.get_bearer_token(qbo_settings.auth_code, qbo_settings.realm_id)
